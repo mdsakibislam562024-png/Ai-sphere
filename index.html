@@ -12,7 +12,7 @@
     <style>
         body { margin: 0; padding: 0; background-color: #0f172a; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; color: white; }
 
-        /* ১. স্প্ল্যাশ স্ক্রিন (মোবাইল ফ্রেন্ডলি) */
+        /* ১. স্প্ল্যাশ স্ক্রিন (রেসপন্সিভ) */
         #splash-screen {
             position: fixed;
             top: 0; left: 0;
@@ -31,7 +31,7 @@
 
         #splash-screen h1 {
             color: #ffffff;
-            font-size: clamp(32px, 10vw, 50px); /* মোবাইলে অটো ছোট হবে */
+            font-size: clamp(32px, 10vw, 50px);
             letter-spacing: 5px;
             font-weight: bold;
             margin: 0;
@@ -42,7 +42,6 @@
         #splash-screen p {
             color: rgba(255,255,255,0.6);
             margin-top: 15px;
-            letter-spacing: 2px;
             font-size: 14px;
         }
 
@@ -152,20 +151,22 @@
     </div>
 
     <script>
-        // তোমার Firebase Config (সবসময় এক থাকবে)
+        // তোমার পাঠানো আসল ফায়ারবেজ কোডটি এখানে বসিয়ে দিলাম
         const firebaseConfig = {
-            apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nww5zyIdw",
+            apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
             authDomain: "ai-sphere-2.firebaseapp.com",
             projectId: "ai-sphere-2",
             storageBucket: "ai-sphere-2.firebasestorage.app",
             messagingSenderId: "287882935194",
-            appId: "1:287882935194:web:2401447236fb88b26f5823"
+            appId: "1:287882935194:web:2401447236fb80b26f5823",
+            measurementId: "G-TH979VPV64"
         };
 
+        // ফায়ারবেজ শুরু
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // স্প্ল্যাশ স্ক্রিন থেকে লগইন স্ক্রিনে ট্রানজিশন
+        // ট্রানজিশন লজিক
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
