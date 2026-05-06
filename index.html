@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Sphere | Secure Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #0f172a; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; color: white; }
+
+        /* ১. স্প্ল্যাশ স্ক্রিন */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, #001fcc 0%, #000b4d 100%); 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #splash-screen h1 {
+            color: #ffffff;
+            font-size: 45px;
+            letter-spacing: 15px;
+            font-weight: bold;
+            animation: pulseGlow 2.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 1; }
+        }
+
+        /* ২. লগইন সেকশন */
+        #login-container {
+            display: none; /* শুরুতে লুকানো */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .login-box {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 85%;
+            max-width: 350px;
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: none;
+            background: #334155;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #0044ff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover { background: #0033cc; }
+
+        /* ৩. হোম পেজ (গেম কন্টেন্ট) */
+        #home-page {
+            display: none; /* লগইন না হওয়া পর্যন্ত লুকানো */
+            opacity: 0;
+            transition: opacity 1.5s ease-in;
+        }
+
+        .nav-bar {
+            background-color: #121212;
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            border-bottom: 2px solid #1e1e1e;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 1000;
+        }
+
+        .nav-item { color: #0044ff; font-size: 22px; text-decoration: none; display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .nav-item span { font-size: 10px; margin-top: 5px; text-transform: uppercase; }
+        .main-content { text-align: center; margin-top: 220px; color: #f1f1f1; }
+        .main-content h2 { color: #0044ff; font-size: 40px; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <h1>AI-SPHERE</h1>
+        <p style="color: rgba(255,255,255,0.6); margin-top: 20px; letter-spacing: 3px;">The Future is Loading...</p>
+    </div>
+
+    <div id="login-container">
+        <div class="login-box">
+            <h2 style="color: #0044ff;">লগইন করুন</h2>
+            <p style="font-size: 12px; color: #94a3b8;">আপনার ফোন নম্বর দিন (যেমন: +88017...)</p>
+            
+            <div id="phone-input-area">
+                <input type="text" id="phone" placeholder="+8801XXXXXXXXX">
+                <div id="recaptcha-container"></div>
+                <button class="btn" onclick="sendOTP()">ওটিপি পাঠান</button>
+            </div>
+
+            <div id="otp-input-area" style="display: none;">
+                <input type="text" id="otp" placeholder="৬ ডিজিটের কোড দিন">
+                <button class="btn" onclick="verifyOTP()">নিশ্চিত করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="home-page">
+        <div class="nav-bar">
+            <a href="#" class="nav-item"><i class="fa-solid fa-bars"></i><span>Menu</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-user-gear"></i><span>Profile</span></a>
+        </div>
+
+        <div class="main-content">
+            <h2>AI-SPHERE WORLD</h2>
+            <p>অভিনন্দন সাকিব! তুমি সফলভাবে লগইন করেছো।</p>
+        </div>
+    </div>
+
+    <script>
+        // ফায়ারবেজ কনফিগ (তোমার প্রজেক্টের ডাটা)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nww5zyIdw",
+            authDomain: "ai-sphere-2.firebaseapp.com",
+            projectId: "ai-sphere-2",
+            storageBucket: "ai-sphere-2.firebasestorage.app",
+            messagingSenderId: "287882935194",
+            appId: "1:287882935194:web:2401447236fb88b26f5823",
+            measurementId: "G-TH979VPV64"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // ১. স্প্ল্যাশ স্ক্রিন থেকে লগইন স্ক্রিনে যাওয়া
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.display = 'none';
+                document.getElementById('login-container').style.display = 'flex';
+            }, 1000);
+        }, 3000);
+
+        // ২. ওটিপি পাঠানো
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
+        let confirmationResult;
+
+        function sendOTP() {
+            const phoneNumber = document.getElementById('phone').value;
+            auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+                .then((result) => {
+                    confirmationResult = result;
+                    alert("ওটিপি কোড পাঠানো হয়েছে!");
+                    document.getElementById('phone-input-area').style.display = 'none';
+                    document.getElementById('otp-input-area').style.display = 'block';
+                }).catch((error) => {
+                    alert("ভুল হয়েছে: " + error.message);
+                });
+        }
+
+        // ৩. ওটিপি ভেরিফাই করে মূল গেমে ঢোকা
+        function verifyOTP() {
+            const code = document.getElementById('otp').value;
+            confirmationResult.confirm(code).then((result) => {
+                alert("লগইন সফল!");
+                document.getElementById('login-container').style.display = 'none';
+                const home = document.getElementById('home-page');
+                home.style.display = 'block';
+                setTimeout(() => { home.style.opacity = '1'; }, 100);
+            }).catch((error) => {
+                alert("ভুল কোড! আবার চেষ্টা করুন।");
+            });
+        }
+    </script>
+</body>
+</html>
