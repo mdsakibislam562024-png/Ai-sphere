@@ -3,204 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Sphere | Secure Access</title>
+    <title>AI-Sphere | The Master Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-
     <style>
-        body { margin: 0; padding: 0; background-color: #0f172a; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; color: white; }
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --accent-blue: #00d4ff;
+            --nav-bg: rgba(15, 23, 42, 0.95);
+        }
 
-        /* ১. স্প্ল্যাশ স্ক্রিন (রেসপন্সিভ) */
+        body { 
+            margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif; transition: 0.5s; overflow-x: hidden;
+        }
+
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, #001fcc 0%, #000b4d 100%); 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 1s ease-in-out;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 1s;
         }
 
-        #splash-screen h1 {
-            color: #ffffff;
-            font-size: clamp(32px, 10vw, 50px);
-            letter-spacing: 5px;
-            font-weight: bold;
-            margin: 0;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            animation: pulseGlow 2.5s infinite;
+        .close-btn {
+            position: absolute; top: 10px; right: 15px;
+            font-size: 26px; color: var(--accent-blue); cursor: pointer;
+            transition: 0.3s; z-index: 1100;
         }
+        .close-btn:hover { color: #ff4d4d; transform: rotate(90deg); }
 
-        #splash-screen p {
-            color: rgba(255,255,255,0.6);
-            margin-top: 15px;
-            font-size: 14px;
+        .sidebar {
+            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
+            background: var(--nav-bg); backdrop-filter: blur(15px);
+            z-index: 2000; transition: 0.4s; padding: 20px; border-right: 1px solid rgba(0, 212, 255, 0.1);
         }
+        .sidebar.active { left: 0; }
+        .sidebar-item { display: flex; align-items: center; padding: 15px 10px; color: var(--text-color); border-radius: 10px; cursor: pointer; margin-bottom: 5px; }
+        .sidebar-item:hover { background: rgba(0, 212, 255, 0.1); color: var(--accent-blue); }
 
-        @keyframes pulseGlow {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.03); opacity: 1; }
-        }
+        .menu-btn { position: fixed; top: 15px; left: 15px; z-index: 2100; font-size: 24px; color: var(--accent-blue); cursor: pointer; display: none; }
 
-        /* ২. লগইন সেকশন */
-        #login-container {
-            display: none; 
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; position: relative; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #334155; background: rgba(0,0,0,0.2); color: var(--text-color); text-align: center; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #0044ff, #00d4ff); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
 
-        .login-box {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 85%;
-            max-width: 350px;
-            text-align: center;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid rgba(0, 212, 255, 0.1); text-align: center; }
+        .stat-card i { color: var(--accent-blue); font-size: 18px; margin-bottom: 5px; }
+        .stat-card h3 { margin: 5px 0; font-size: 18px; }
+        .stat-card p { margin: 0; font-size: 10px; color: #94a3b8; }
 
-        input {
-            width: 90%;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 10px;
-            border: none;
-            background: #334155;
-            color: white;
-            font-size: 16px;
-            text-align: center;
-        }
+        .nav-bar { background: var(--nav-bg); padding: 12px 0; display: flex; justify-content: space-around; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .nav-item { color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 9px; }
+        .nav-item.active { color: var(--accent-blue); }
 
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #0044ff;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .main-content { margin-top: 100px; padding: 20px; text-align: center; }
+        .view-section { display: none; animation: slideUp 0.4s ease; position: relative; }
+        @keyframes slideUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* ৩. হোম পেজ */
-        #home-page {
-            display: none;
-            opacity: 0;
-            transition: opacity 1.5s ease-in;
-        }
-
-        .nav-bar {
-            background-color: #121212;
-            padding: 15px 0;
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            border-bottom: 2px solid #1e1e1e;
-            position: fixed;
-            top: 0; left: 0;
-            z-index: 1000;
-        }
-
-        .nav-item { color: #0044ff; text-decoration: none; display: flex; flex-direction: column; align-items: center; }
-        .nav-item span { font-size: 10px; margin-top: 5px; text-transform: uppercase; }
-        .main-content { text-align: center; margin-top: 150px; padding: 20px; }
+        .history-item { display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 10px; font-size: 13px; text-align: left; border-left: 4px solid var(--accent-blue); }
+        .wallet-icons img { width: 50px; background: white; padding: 5px; border-radius: 10px; margin: 0 5px 15px; }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen">
-        <h1>AI-SPHERE</h1>
-        <p>The Future is Loading...</p>
+    <div id="splash-screen"><h1>AI-SPHERE</h1></div>
+    <div id="menu-icon" class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
+    
+    <div id="sidebar" class="sidebar">
+        <h3 style="margin-top:40px; color: var(--accent-blue);">Settings</h3>
+        <div class="sidebar-item" onclick="showSection('dashboard-view', true)"><i class="fa-solid fa-chart-line"></i> ড্যাশবোর্ড</div>
+        <div class="sidebar-item" onclick="showSection('history-view', true)"><i class="fa-solid fa-clock-rotate-left"></i> উইথড্র হিস্ট্রি</div>
+        <div class="sidebar-item" onclick="showSection('security-view', true)"><i class="fa-solid fa-shield-halved"></i> প্রোফাইল সিকিউরিটি</div>
+        <div class="sidebar-item" onclick="location.reload()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
     </div>
 
-    <div id="login-container">
-        <div class="login-box">
-            <h2 style="color: #0044ff;">লগইন</h2>
-            <div id="phone-input-area">
-                <input type="text" id="phone" placeholder="+8801XXXXXXXXX">
-                <div id="recaptcha-container"></div>
-                <button class="btn" onclick="sendOTP()">ওটিপি পাঠান</button>
-            </div>
-            <div id="otp-input-area" style="display: none;">
-                <input type="text" id="otp" placeholder="৬ ডিজিটের কোড">
-                <button class="btn" onclick="verifyOTP()">নিশ্চিত করুন</button>
-            </div>
+    <div id="login-container" style="display:flex; height: 100vh; flex-direction: column; justify-content: center; align-items: center;">
+        <div class="card" style="width: 310px; text-align: center;">
+            <h2 style="color: var(--accent-blue);">Login</h2>
+            <input type="text" id="user-input" placeholder="তোমার নাম">
+            <button class="btn" onclick="login()">অ্যাক্সেস করুন</button>
         </div>
     </div>
 
     <div id="home-page">
         <div class="nav-bar">
-            <a href="#" class="nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="#" id="nav-home" class="nav-item active" onclick="showSection('home-view')"><i class="fa-solid fa-house"></i><span>Home</span></a>
             <a href="#" class="nav-item"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-user-gear"></i><span>Profile</span></a>
+            <a href="#" class="nav-item" onclick="showSection('dashboard-view')"><i class="fa-solid fa-chart-line"></i><span>Stats</span></a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></a>
         </div>
+
         <div class="main-content">
-            <h2 style="color: #0044ff; font-size: 30px;">AI-SPHERE WORLD</h2>
-            <p>স্বাগতম সাকিব! তোমার প্রজেক্ট এখন লাইভ।</p>
+            <div id="home-view" class="view-section" style="display: block;">
+                <h2 id="display-name">WELCOME</h2>
+                <p style="color: #94a3b8;">সবকিছু এখন এক জায়গায় পারফেক্ট</p>
+                <div style="margin-top: 60px; opacity: 0.1;"><i class="fa-solid fa-shield-cat" style="font-size: 100px;"></i></div>
+            </div>
+
+            <div id="dashboard-view" class="view-section">
+                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
+                <h3 style="color: var(--accent-blue); margin-bottom: 20px;">পারফরম্যান্স স্ট্যাটাস</h3>
+                
+                <div class="dashboard-grid">
+                    <div class="stat-card"><i class="fa-solid fa-eye"></i><h3>1,250</h3><p>ভিউ</p></div>
+                    <div class="stat-card"><i class="fa-solid fa-sack-dollar"></i><h3>৳<span id="dash-bal">1250</span></h3><p>ব্যালেন্স</p></div>
+                    <div class="stat-card"><i class="fa-solid fa-user-plus"></i><h3>5</h3><p>রেফারাল</p></div>
+                    <div class="stat-card"><i class="fa-solid fa-gift"></i><h3>৳১০০</h3><p>রেফার ইনকাম</p></div>
+                </div>
+
+                <div class="card">
+                    <div class="wallet-icons">
+                        <img src="https://www.logo.wine/a/logo/Bkash/Bkash-Icon-Logo.wine.svg" alt="bKash">
+                        <img src="https://download.logo.wine/logo/Nagad/Nagad-Vertical-Logo.wine.png" alt="Nagad">
+                    </div>
+                    <h4 id="wallet-title">উইথড্র ওয়ালেট সেটআপ</h4>
+                    
+                    <div id="wallet-setup">
+                        <select id="pay-method"><option value="bKash">bKash</option><option value="Nagad">Nagad</option></select>
+                        <input type="number" id="pay-phone" placeholder="বিকাশ/নগদ নাম্বার দিন">
+                        <button class="btn" onclick="saveWallet()">ওয়ালেট সেভ করুন</button>
+                    </div>
+
+                    <div id="payout-area" style="display: none;">
+                        <p style="font-size: 13px; color: #00ff7f; margin-bottom: 15px;">সক্রিয় ওয়ালেট: <span id="active-num"></span></p>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(100)">৳১০০</button>
+                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(500)">৳৫০০</button>
+                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(1000)">৳১০০০</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-view" class="view-section">
+                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
+                <h3 style="color: var(--accent-blue);">উইথড্র হিস্ট্রি</h3>
+                <div id="history-list">
+                    <p style="color: #94a3b8; font-size: 12px;">লেনদেনের কোনো রেকর্ড নেই।</p>
+                </div>
+            </div>
+
+            <div id="security-view" class="view-section">
+                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
+                <div class="card">
+                    <h3>সিকিউরিটি সেটিংস</h3>
+                    <input type="password" placeholder="নতুন পাসওয়ার্ড">
+                    <button class="btn">আপডেট করুন</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // তোমার পাঠানো আসল ফায়ারবেজ কোডটি এখানে বসিয়ে দিলাম
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
-            authDomain: "ai-sphere-2.firebaseapp.com",
-            projectId: "ai-sphere-2",
-            storageBucket: "ai-sphere-2.firebasestorage.app",
-            messagingSenderId: "287882935194",
-            appId: "1:287882935194:web:2401447236fb80b26f5823",
-            measurementId: "G-TH979VPV64"
-        };
+        let balance = 1250;
+        let lastView = 'home-view';
+        let isFromSidebar = false;
 
-        // ফায়ারবেজ শুরু
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            const icon = document.querySelector('#menu-icon i');
+            if(icon) { icon.classList.toggle('fa-bars'); icon.classList.toggle('fa-xmark'); }
+        }
 
-        // ট্রানজিশন লজিক
+        function showSection(id, fromSidebar = false) {
+            const currentActive = Array.from(document.querySelectorAll('.view-section')).find(s => s.style.display === 'block');
+            if (currentActive && currentActive.id !== id) { lastView = currentActive.id; }
+            isFromSidebar = fromSidebar;
+            document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(id === 'home-view') document.getElementById('nav-home').classList.add('active');
+            if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
+        }
+
+        function goBack() {
+            document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
+            document.getElementById(lastView).style.display = 'block';
+            if(isFromSidebar) { toggleSidebar(); isFromSidebar = false; }
+            if(lastView === 'home-view') document.getElementById('nav-home').classList.add('active');
+        }
+
+        function saveWallet() {
+            const num = document.getElementById('pay-phone').value;
+            const method = document.getElementById('pay-method').value;
+            if(num.length >= 11) {
+                document.getElementById('wallet-setup').style.display = 'none';
+                document.getElementById('payout-area').style.display = 'block';
+                document.getElementById('wallet-title').innerText = "টাকা উত্তোলন করুন";
+                document.getElementById('active-num').innerText = method + " (" + num + ")";
+            } else { alert("সঠিক ১১ ডিজিটের নাম্বার দিন"); }
+        }
+
+        function withdraw(amount) {
+            if(amount <= balance) {
+                balance -= amount;
+                document.getElementById('dash-bal').innerText = balance;
+                const list = document.getElementById('history-list');
+                if(list.querySelector('p')) list.innerHTML = '';
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `<span>৳${amount} উত্তোলন</span> <span>${new Date().toLocaleDateString()} - <small style="color:#facc15">Pending</small></span>`;
+                list.prepend(item);
+                alert("আপনার উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।");
+            } else { alert("পর্যাপ্ত ব্যালেন্স নেই"); }
+        }
+
+        function login() {
+            const name = document.getElementById('user-input').value;
+            if(name) document.getElementById('display-name').innerText = "স্বাগতম, " + name.toUpperCase();
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('home-page').style.display = 'block';
+            document.getElementById('menu-icon').style.display = 'block';
+            setTimeout(() => { document.getElementById('home-page').style.opacity = '1'; }, 100);
+        }
+
         setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.display = 'none';
-                document.getElementById('login-container').style.display = 'flex';
-            }, 1000);
-        }, 3500);
-
-        // ওটিপি পাঠানোর ফাংশন
-        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
-        let confirmationResult;
-
-        function sendOTP() {
-            const phoneNumber = document.getElementById('phone').value;
-            auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-                .then((result) => {
-                    confirmationResult = result;
-                    alert("ওটিপি পাঠানো হয়েছে!");
-                    document.getElementById('phone-input-area').style.display = 'none';
-                    document.getElementById('otp-input-area').style.display = 'block';
-                }).catch((error) => { alert("এরোর: " + error.message); });
-        }
-
-        // ওটিপি ভেরিফাই করার ফাংশন
-        function verifyOTP() {
-            const code = document.getElementById('otp').value;
-            confirmationResult.confirm(code).then((result) => {
-                document.getElementById('login-container').style.display = 'none';
-                const home = document.getElementById('home-page');
-                home.style.display = 'block';
-                setTimeout(() => { home.style.opacity = '1'; }, 100);
-            }).catch((error) => { alert("ভুল কোড!"); });
-        }
+            document.getElementById('splash-screen').style.opacity = '0';
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1000);
+        }, 2000);
     </script>
 </body>
 </html>
