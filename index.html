@@ -3,227 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Sphere | The Master Edition</title>
+    <title>AI-Sphere | Full Pro Sidebar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
         :root {
-            --bg-color: #0f172a;
+            --bg-color: #000000;
             --text-color: #ffffff;
-            --card-bg: rgba(255, 255, 255, 0.05);
             --accent-blue: #00d4ff;
-            --nav-bg: rgba(15, 23, 42, 0.95);
+            --nav-bg: rgba(0, 0, 0, 0.95);
         }
 
         body { 
             margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color);
-            font-family: 'Segoe UI', sans-serif; transition: 0.5s; overflow-x: hidden;
+            font-family: 'Segoe UI', sans-serif; overflow-x: hidden;
         }
 
+        /* স্প্ল্যাশ স্ক্রিন */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #001fcc 0%, #000b4d 100%); 
+            background: radial-gradient(circle, #001fcc 0%, #000000 100%); 
             display: flex; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 1s;
+            z-index: 9999; transition: opacity 1s ease;
         }
 
-        .close-btn {
-            position: absolute; top: 10px; right: 15px;
-            font-size: 26px; color: var(--accent-blue); cursor: pointer;
-            transition: 0.3s; z-index: 1100;
+        /* হেডার ও নেভিগেশন */
+        .header-bar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background: var(--nav-bg); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 15px; box-sizing: border-box; z-index: 2100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .close-btn:hover { color: #ff4d4d; transform: rotate(90deg); }
+        .header-btn { font-size: 20px; color: var(--accent-blue); cursor: pointer; }
 
-        .sidebar {
-            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
-            background: var(--nav-bg); backdrop-filter: blur(15px);
-            z-index: 2000; transition: 0.4s; padding: 20px; border-right: 1px solid rgba(0, 212, 255, 0.1);
+        .nav-bar { 
+            background: var(--nav-bg); padding: 10px 0; display: flex; 
+            justify-content: space-around; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); 
+            position: fixed; top: 60px; left: 0; z-index: 1000;
         }
-        .sidebar.active { left: 0; }
-        .sidebar-item { display: flex; align-items: center; padding: 15px 10px; color: var(--text-color); border-radius: 10px; cursor: pointer; margin-bottom: 5px; }
-        .sidebar-item:hover { background: rgba(0, 212, 255, 0.1); color: var(--accent-blue); }
-
-        .menu-btn { position: fixed; top: 15px; left: 15px; z-index: 2100; font-size: 24px; color: var(--accent-blue); cursor: pointer; display: none; }
-
-        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; position: relative; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #334155; background: rgba(0,0,0,0.2); color: var(--text-color); text-align: center; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #0044ff, #00d4ff); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-bg); padding: 15px; border-radius: 15px; border: 1px solid rgba(0, 212, 255, 0.1); text-align: center; }
-        .stat-card i { color: var(--accent-blue); font-size: 18px; margin-bottom: 5px; }
-        .stat-card h3 { margin: 5px 0; font-size: 18px; }
-        .stat-card p { margin: 0; font-size: 10px; color: #94a3b8; }
-
-        .nav-bar { background: var(--nav-bg); padding: 12px 0; display: flex; justify-content: space-around; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .nav-item { color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 9px; }
         .nav-item.active { color: var(--accent-blue); }
 
-        .main-content { margin-top: 100px; padding: 20px; text-align: center; }
-        .view-section { display: none; animation: slideUp 0.4s ease; position: relative; }
-        @keyframes slideUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        /* পূর্ণাঙ্গ সাইডবার */
+        .sidebar {
+            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
+            background: var(--nav-bg); backdrop-filter: blur(15px);
+            z-index: 3000; transition: 0.4s; border-right: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex; flex-direction: column;
+        }
+        .sidebar.active { left: 0; }
+        .sidebar-header { padding: 20px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-menu { flex-grow: 1; padding: 15px; overflow-y: auto; }
+        
+        .sidebar-item { display: flex; align-items: center; padding: 14px 12px; color: var(--text-color); border-radius: 10px; cursor: pointer; margin-bottom: 5px; font-size: 14px; transition: 0.2s; }
+        .sidebar-item i { margin-right: 15px; color: var(--accent-blue); width: 20px; font-size: 18px; }
+        .sidebar-item:hover { background: rgba(0, 212, 255, 0.1); }
 
-        .history-item { display: flex; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 10px; font-size: 13px; text-align: left; border-left: 4px solid var(--accent-blue); }
-        .wallet-icons img { width: 50px; background: white; padding: 5px; border-radius: 10px; margin: 0 5px 15px; }
+        .sidebar-footer { padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .logout-btn { color: #ff4d4d !important; font-weight: bold; }
+        .logout-btn i { color: #ff4d4d !important; }
+
+        /* কন্টেন্ট এরিয়া */
+        .main-content { margin-top: 140px; padding: 20px; text-align: center; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: rgba(255,255,255,0.07); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #0044ff, #00d4ff); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="splash-screen"><h1>AI-SPHERE</h1></div>
-    <div id="menu-icon" class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
-    
-    <div id="sidebar" class="sidebar">
-        <h3 style="margin-top:40px; color: var(--accent-blue);">Settings</h3>
-        <div class="sidebar-item" onclick="showSection('dashboard-view', true)"><i class="fa-solid fa-chart-line"></i> ড্যাশবোর্ড</div>
-        <div class="sidebar-item" onclick="showSection('history-view', true)"><i class="fa-solid fa-clock-rotate-left"></i> উইথড্র হিস্ট্রি</div>
-        <div class="sidebar-item" onclick="showSection('security-view', true)"><i class="fa-solid fa-shield-halved"></i> প্রোফাইল সিকিউরিটি</div>
-        <div class="sidebar-item" onclick="location.reload()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+
+    <div id="top-header" class="header-bar" style="display:none;">
+        <div class="header-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></div>
+        <div style="font-weight: bold; color: var(--accent-blue); letter-spacing: 2px;">AI SPHERE</div>
+        <div class="header-btn" onclick="showSection('chat-view')"><i class="fa-solid fa-comment-dots"></i></div>
     </div>
 
-    <div id="login-container" style="display:flex; height: 100vh; flex-direction: column; justify-content: center; align-items: center;">
-        <div class="card" style="width: 310px; text-align: center;">
-            <h2 style="color: var(--accent-blue);">Login</h2>
-            <input type="text" id="user-input" placeholder="তোমার নাম">
+    <!-- পূর্ণাঙ্গ সাইডবার মেনু -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-arrow-left" style="font-size: 20px; cursor: pointer; color: var(--accent-blue);" onclick="toggleSidebar()"></i>
+        </div>
+        
+        <div class="sidebar-menu">
+            <div class="sidebar-item" onclick="showSection('dashboard-view')"><i class="fa-solid fa-gauge-high"></i> ড্যাশবোর্ড</div>
+            <div class="sidebar-item" onclick="alert('ডার্ক মোড অলরেডি সক্রিয়!')"><i class="fa-solid fa-moon"></i> ডার্ক মোড</div>
+            <div class="sidebar-item" onclick="alert('সেটিংস লোড হচ্ছে...')"><i class="fa-solid fa-sliders"></i> সেটিংস</div>
+            <div class="sidebar-item" onclick="alert('আপনার তথ্য সুরক্ষিত')"><i class="fa-solid fa-user-shield"></i> প্রাইভেসি</div>
+            <div class="sidebar-item" onclick="alert('Help Center opening...')"><i class="fa-solid fa-circle-info"></i> সাহায্য</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-item logout-btn" onclick="location.reload()">
+                <i class="fa-solid fa-power-off"></i> লগআউট
+            </div>
+        </div>
+    </div>
+
+    <div id="login-container" style="display:flex; height: 100vh; justify-content: center; align-items: center;">
+        <div class="card" style="width: 300px; text-align: center;">
+            <h2 style="color: var(--accent-blue);">Ai Sphere</h2>
+            <input type="text" id="user-input" placeholder="তোমার নাম" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#222; color:white; text-align:center;">
             <button class="btn" onclick="login()">অ্যাক্সেস করুন</button>
         </div>
     </div>
 
-    <div id="home-page">
+    <div id="home-page" style="display:none;">
         <div class="nav-bar">
-            <a href="#" id="nav-home" class="nav-item active" onclick="showSection('home-view')"><i class="fa-solid fa-house"></i><span>Home</span></a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
-            <a href="#" class="nav-item" onclick="showSection('dashboard-view')"><i class="fa-solid fa-chart-line"></i><span>Stats</span></a>
-            <a href="#" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+            <a href="#" class="nav-item active" onclick="showSection('home-view', this)"><i class="fa-solid fa-house"></i><span>Home</span></a>
+            <a href="#" class="nav-item" onclick="showSection('reels-view', this)"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
+            <a href="#" class="nav-item" onclick="showSection('friends-view', this)"><i class="fa-solid fa-user-plus"></i><span>Friends</span></a>
+            <a href="#" class="nav-item" onclick="showSection('dashboard-view', this)"><i class="fa-solid fa-wallet"></i><span>Stats</span></a>
+            <a href="#" class="nav-item" onclick="alert('সব আপডেট চেক করা হয়েছে!')"><i class="fa-solid fa-satellite-dish"></i><span>Notif</span></a>
+            <a href="#" class="nav-item" onclick="showSection('profile-view', this)"><i class="fa-solid fa-fingerprint"></i><span>Profile</span></a>
         </div>
 
         <div class="main-content">
             <div id="home-view" class="view-section" style="display: block;">
-                <h2 id="display-name">WELCOME</h2>
-                <p style="color: #94a3b8;">সবকিছু এখন এক জায়গায় পারফেক্ট</p>
-                <div style="margin-top: 60px; opacity: 0.1;"><i class="fa-solid fa-shield-cat" style="font-size: 100px;"></i></div>
+                <h2>WELCOME</h2>
+                <div class="card"><p>সাকিব, এখন সাইডবার আর মেনু—সবই পারফেক্ট!</p></div>
             </div>
 
             <div id="dashboard-view" class="view-section">
-                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
-                <h3 style="color: var(--accent-blue); margin-bottom: 20px;">পারফরম্যান্স স্ট্যাটাস</h3>
-                
-                <div class="dashboard-grid">
-                    <div class="stat-card"><i class="fa-solid fa-eye"></i><h3>1,250</h3><p>ভিউ</p></div>
-                    <div class="stat-card"><i class="fa-solid fa-sack-dollar"></i><h3>৳<span id="dash-bal">1250</span></h3><p>ব্যালেন্স</p></div>
-                    <div class="stat-card"><i class="fa-solid fa-user-plus"></i><h3>5</h3><p>রেফারাল</p></div>
-                    <div class="stat-card"><i class="fa-solid fa-gift"></i><h3>৳১০০</h3><p>রেফার ইনকাম</p></div>
-                </div>
-
-                <div class="card">
-                    <div class="wallet-icons">
-                        <img src="https://www.logo.wine/a/logo/Bkash/Bkash-Icon-Logo.wine.svg" alt="bKash">
-                        <img src="https://download.logo.wine/logo/Nagad/Nagad-Vertical-Logo.wine.png" alt="Nagad">
-                    </div>
-                    <h4 id="wallet-title">উইথড্র ওয়ালেট সেটআপ</h4>
-                    
-                    <div id="wallet-setup">
-                        <select id="pay-method"><option value="bKash">bKash</option><option value="Nagad">Nagad</option></select>
-                        <input type="number" id="pay-phone" placeholder="বিকাশ/নগদ নাম্বার দিন">
-                        <button class="btn" onclick="saveWallet()">ওয়ালেট সেভ করুন</button>
-                    </div>
-
-                    <div id="payout-area" style="display: none;">
-                        <p style="font-size: 13px; color: #00ff7f; margin-bottom: 15px;">সক্রিয় ওয়ালেট: <span id="active-num"></span></p>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(100)">৳১০০</button>
-                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(500)">৳৫০০</button>
-                            <button class="btn" style="padding: 10px; font-size: 11px;" onclick="withdraw(1000)">৳১০০০</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="card"><h3>৳ 1250</h3><p>আপনার বর্তমান ব্যালেন্স</p></div>
             </div>
 
-            <div id="history-view" class="view-section">
-                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
-                <h3 style="color: var(--accent-blue);">উইথড্র হিস্ট্রি</h3>
-                <div id="history-list">
-                    <p style="color: #94a3b8; font-size: 12px;">লেনদেনের কোনো রেকর্ড নেই।</p>
-                </div>
+            <div id="chat-view" class="view-section">
+                <h3>Messages</h3>
+                <div class="card"><p>কোনো নতুন মেসেজ নেই।</p></div>
+            </div>
+            
+            <div id="reels-view" class="view-section">
+                <div class="card"><p>রিলস ভিডিও লোড হচ্ছে...</p></div>
             </div>
 
-            <div id="security-view" class="view-section">
-                <div class="close-btn" onclick="goBack()"><i class="fa-solid fa-circle-xmark"></i></div>
-                <div class="card">
-                    <h3>সিকিউরিটি সেটিংস</h3>
-                    <input type="password" placeholder="নতুন পাসওয়ার্ড">
-                    <button class="btn">আপডেট করুন</button>
-                </div>
+            <div id="friends-view" class="view-section">
+                <div class="card"><p>ফ্রেন্ড রিকোয়েস্ট চেক করুন।</p></div>
+            </div>
+
+            <div id="profile-view" class="view-section">
+                <div class="card"><h3>সাকিব</h3><p>CEO, Ai Sphere</p></div>
             </div>
         </div>
     </div>
 
     <script>
-        let balance = 1250;
-        let lastView = 'home-view';
-        let isFromSidebar = false;
+        setTimeout(() => {
+            const ss = document.getElementById('splash-screen');
+            ss.style.opacity = '0';
+            setTimeout(() => { ss.style.display = 'none'; }, 1000);
+        }, 2000);
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            const icon = document.querySelector('#menu-icon i');
-            if(icon) { icon.classList.toggle('fa-bars'); icon.classList.toggle('fa-xmark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        function login() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('home-page').style.display = 'block';
+            document.getElementById('top-header').style.display = 'flex';
         }
 
-        function showSection(id, fromSidebar = false) {
-            const currentActive = Array.from(document.querySelectorAll('.view-section')).find(s => s.style.display === 'block');
-            if (currentActive && currentActive.id !== id) { lastView = currentActive.id; }
-            isFromSidebar = fromSidebar;
+        function showSection(id, element) {
             document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'block';
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            if(id === 'home-view') document.getElementById('nav-home').classList.add('active');
+            if(element) element.classList.add('active');
             if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         }
-
-        function goBack() {
-            document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
-            document.getElementById(lastView).style.display = 'block';
-            if(isFromSidebar) { toggleSidebar(); isFromSidebar = false; }
-            if(lastView === 'home-view') document.getElementById('nav-home').classList.add('active');
-        }
-
-        function saveWallet() {
-            const num = document.getElementById('pay-phone').value;
-            const method = document.getElementById('pay-method').value;
-            if(num.length >= 11) {
-                document.getElementById('wallet-setup').style.display = 'none';
-                document.getElementById('payout-area').style.display = 'block';
-                document.getElementById('wallet-title').innerText = "টাকা উত্তোলন করুন";
-                document.getElementById('active-num').innerText = method + " (" + num + ")";
-            } else { alert("সঠিক ১১ ডিজিটের নাম্বার দিন"); }
-        }
-
-        function withdraw(amount) {
-            if(amount <= balance) {
-                balance -= amount;
-                document.getElementById('dash-bal').innerText = balance;
-                const list = document.getElementById('history-list');
-                if(list.querySelector('p')) list.innerHTML = '';
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `<span>৳${amount} উত্তোলন</span> <span>${new Date().toLocaleDateString()} - <small style="color:#facc15">Pending</small></span>`;
-                list.prepend(item);
-                alert("আপনার উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।");
-            } else { alert("পর্যাপ্ত ব্যালেন্স নেই"); }
-        }
-
-        function login() {
-            const name = document.getElementById('user-input').value;
-            if(name) document.getElementById('display-name').innerText = "স্বাগতম, " + name.toUpperCase();
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('home-page').style.display = 'block';
-            document.getElementById('menu-icon').style.display = 'block';
-            setTimeout(() => { document.getElementById('home-page').style.opacity = '1'; }, 100);
-        }
-
-        setTimeout(() => {
-            document.getElementById('splash-screen').style.opacity = '0';
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1000);
-        }, 2000);
     </script>
 </body>
 </html>
