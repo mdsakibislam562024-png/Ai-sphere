@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Sphere | Full Pro Sidebar</title>
+    <title>Ai Sphere | Final Master Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -19,7 +19,7 @@
             font-family: 'Segoe UI', sans-serif; overflow-x: hidden;
         }
 
-        /* স্প্ল্যাশ স্ক্রিন */
+        /* স্প্ল্যাশ স্ক্রিন (ব্লু গ্রেডিয়েন্ট) */
         #splash-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, #001fcc 0%, #000000 100%); 
@@ -27,15 +27,32 @@
             z-index: 9999; transition: opacity 1s ease;
         }
 
-        /* হেডার ও নেভিগেশন */
+        /* হেডার */
         .header-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            background: var(--nav-bg); display: flex; justify-content: space-between;
+            background: var(--nav-bg); display: none; justify-content: space-between;
             align-items: center; padding: 0 15px; box-sizing: border-box; z-index: 2100;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .header-btn { font-size: 20px; color: var(--accent-blue); cursor: pointer; }
 
+        /* সাইডবার */
+        .sidebar {
+            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
+            background: var(--nav-bg); backdrop-filter: blur(15px);
+            z-index: 3000; transition: 0.4s; border-right: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex; flex-direction: column;
+        }
+        .sidebar.active { left: 0; }
+        .sidebar-header { padding: 20px; text-align: right; }
+        .sidebar-menu { flex-grow: 1; padding: 15px; overflow-y: auto; }
+        .sidebar-item { display: flex; align-items: center; padding: 14px 12px; color: var(--text-color); border-radius: 10px; cursor: pointer; margin-bottom: 5px; font-size: 14px; }
+        .sidebar-item i { margin-right: 15px; color: var(--accent-blue); width: 20px; }
+
+        .sidebar-footer { padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .logout-btn { color: #ff4d4d !important; font-weight: bold; }
+
+        /* নিচের নেভিগেশন */
         .nav-bar { 
             background: var(--nav-bg); padding: 10px 0; display: flex; 
             justify-content: space-around; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); 
@@ -44,29 +61,22 @@
         .nav-item { color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 9px; }
         .nav-item.active { color: var(--accent-blue); }
 
-        /* পূর্ণাঙ্গ সাইডবার */
-        .sidebar {
-            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
-            background: var(--nav-bg); backdrop-filter: blur(15px);
-            z-index: 3000; transition: 0.4s; border-right: 1px solid rgba(0, 212, 255, 0.2);
-            display: flex; flex-direction: column;
-        }
-        .sidebar.active { left: 0; }
-        .sidebar-header { padding: 20px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .sidebar-menu { flex-grow: 1; padding: 15px; overflow-y: auto; }
-        
-        .sidebar-item { display: flex; align-items: center; padding: 14px 12px; color: var(--text-color); border-radius: 10px; cursor: pointer; margin-bottom: 5px; font-size: 14px; transition: 0.2s; }
-        .sidebar-item i { margin-right: 15px; color: var(--accent-blue); width: 20px; font-size: 18px; }
-        .sidebar-item:hover { background: rgba(0, 212, 255, 0.1); }
-
-        .sidebar-footer { padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .logout-btn { color: #ff4d4d !important; font-weight: bold; }
-        .logout-btn i { color: #ff4d4d !important; }
-
-        /* কন্টেন্ট এরিয়া */
+        /* পৃথিবী ও অরবিট ছবি */
         .main-content { margin-top: 140px; padding: 20px; text-align: center; }
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .earth-container { display: flex; flex-direction: column; justify-content: center; align-items: center; margin-top: 20px; }
+        .earth-wrapper { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .main-earth-img { width: 170px; height: 170px; z-index: 5; animation: smoothFloat 6s infinite ease-in-out; filter: drop-shadow(0 0 35px rgba(0, 212, 255, 0.4)); }
+        
+        .photo-orbit { position: absolute; width: 135%; height: 135%; animation: orbitSpin 15s infinite linear; }
+        .mini-pic { position: absolute; width: 30px; height: 30px; border: 2px solid #fff; border-radius: 50%; background-size: cover; }
+        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes smoothFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+        .p1 { top: 0; left: 50%; transform: translateX(-50%); background-image: url('https://i.pravatar.cc/100?u=1'); }
+        .p2 { top: 50%; right: 0; transform: translateY(-50%); background-image: url('https://i.pravatar.cc/100?u=2'); }
+        .p3 { bottom: 0; left: 50%; transform: translateX(-50%); background-image: url('https://i.pravatar.cc/100?u=3'); }
+        .p4 { top: 50%; left: 0; transform: translateY(-50%); background-image: url('https://i.pravatar.cc/100?u=4'); }
+
         .card { background: rgba(255,255,255,0.07); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
         .btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #0044ff, #00d4ff); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
     </style>
@@ -75,34 +85,27 @@
 
     <div id="splash-screen"><h1>AI-SPHERE</h1></div>
 
-    <div id="top-header" class="header-bar" style="display:none;">
+    <div id="top-header" class="header-bar">
         <div class="header-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></div>
         <div style="font-weight: bold; color: var(--accent-blue); letter-spacing: 2px;">AI SPHERE</div>
         <div class="header-btn" onclick="showSection('chat-view')"><i class="fa-solid fa-comment-dots"></i></div>
     </div>
 
-    <!-- পূর্ণাঙ্গ সাইডবার মেনু -->
     <div id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-            <i class="fa-solid fa-arrow-left" style="font-size: 20px; cursor: pointer; color: var(--accent-blue);" onclick="toggleSidebar()"></i>
-        </div>
-        
+        <div class="sidebar-header"><i class="fa-solid fa-arrow-left" style="cursor:pointer; color:var(--accent-blue);" onclick="toggleSidebar()"></i></div>
         <div class="sidebar-menu">
             <div class="sidebar-item" onclick="showSection('dashboard-view')"><i class="fa-solid fa-gauge-high"></i> ড্যাশবোর্ড</div>
-            <div class="sidebar-item" onclick="alert('ডার্ক মোড অলরেডি সক্রিয়!')"><i class="fa-solid fa-moon"></i> ডার্ক মোড</div>
-            <div class="sidebar-item" onclick="alert('সেটিংস লোড হচ্ছে...')"><i class="fa-solid fa-sliders"></i> সেটিংস</div>
-            <div class="sidebar-item" onclick="alert('আপনার তথ্য সুরক্ষিত')"><i class="fa-solid fa-user-shield"></i> প্রাইভেসি</div>
-            <div class="sidebar-item" onclick="alert('Help Center opening...')"><i class="fa-solid fa-circle-info"></i> সাহায্য</div>
+            <div class="sidebar-item"><i class="fa-solid fa-moon"></i> ডার্ক মোড</div>
+            <div class="sidebar-item"><i class="fa-solid fa-sliders"></i> সেটিংস</div>
+            <div class="sidebar-item"><i class="fa-solid fa-user-shield"></i> প্রাইভেসি</div>
+            <div class="sidebar-item"><i class="fa-solid fa-circle-info"></i> সাহায্য</div>
         </div>
-
         <div class="sidebar-footer">
-            <div class="sidebar-item logout-btn" onclick="location.reload()">
-                <i class="fa-solid fa-power-off"></i> লগআউট
-            </div>
+            <div class="sidebar-item logout-btn" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> লগআউট</div>
         </div>
     </div>
 
-    <div id="login-container" style="display:flex; height: 100vh; justify-content: center; align-items: center;">
+    <div id="login-container" style="display:none; height: 100vh; justify-content: center; align-items: center;">
         <div class="card" style="width: 300px; text-align: center;">
             <h2 style="color: var(--accent-blue);">Ai Sphere</h2>
             <input type="text" id="user-input" placeholder="তোমার নাম" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#222; color:white; text-align:center;">
@@ -116,36 +119,27 @@
             <a href="#" class="nav-item" onclick="showSection('reels-view', this)"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
             <a href="#" class="nav-item" onclick="showSection('friends-view', this)"><i class="fa-solid fa-user-plus"></i><span>Friends</span></a>
             <a href="#" class="nav-item" onclick="showSection('dashboard-view', this)"><i class="fa-solid fa-wallet"></i><span>Stats</span></a>
-            <a href="#" class="nav-item" onclick="alert('সব আপডেট চেক করা হয়েছে!')"><i class="fa-solid fa-satellite-dish"></i><span>Notif</span></a>
             <a href="#" class="nav-item" onclick="showSection('profile-view', this)"><i class="fa-solid fa-fingerprint"></i><span>Profile</span></a>
         </div>
 
         <div class="main-content">
             <div id="home-view" class="view-section" style="display: block;">
-                <h2>WELCOME</h2>
-                <div class="card"><p>সাকিব, এখন সাইডবার আর মেনু—সবই পারফেক্ট!</p></div>
+                <div class="earth-container">
+                    <div class="earth-wrapper" onclick="alert('নিউজ ফিড ওপেন হচ্ছে...')">
+                        <img src="https://i.postimg.cc/t45s6sb2/1778359158913.png" alt="3D Earth" class="main-earth-img">
+                        <div class="photo-orbit">
+                            <div class="mini-pic p1"></div><div class="mini-pic p2"></div>
+                            <div class="mini-pic p3"></div><div class="mini-pic p4"></div>
+                        </div>
+                    </div>
+                    <h2 id="display-name" style="margin-top: 30px; letter-spacing: 3px;">WELCOME</h2>
+                </div>
             </div>
-
-            <div id="dashboard-view" class="view-section">
-                <div class="card"><h3>৳ 1250</h3><p>আপনার বর্তমান ব্যালেন্স</p></div>
-            </div>
-
-            <div id="chat-view" class="view-section">
-                <h3>Messages</h3>
-                <div class="card"><p>কোনো নতুন মেসেজ নেই।</p></div>
-            </div>
-            
-            <div id="reels-view" class="view-section">
-                <div class="card"><p>রিলস ভিডিও লোড হচ্ছে...</p></div>
-            </div>
-
-            <div id="friends-view" class="view-section">
-                <div class="card"><p>ফ্রেন্ড রিকোয়েস্ট চেক করুন।</p></div>
-            </div>
-
-            <div id="profile-view" class="view-section">
-                <div class="card"><h3>সাকিব</h3><p>CEO, Ai Sphere</p></div>
-            </div>
+            <div id="dashboard-view" class="view-section"><div class="card"><h3>৳ 1250</h3><p>ব্যালেন্স</p></div></div>
+            <div id="chat-view" class="view-section"><h3>Messages</h3></div>
+            <div id="reels-view" class="view-section"><h3>Reels</h3></div>
+            <div id="friends-view" class="view-section"><h3>Friends</h3></div>
+            <div id="profile-view" class="view-section"><div class="card"><h3>সাকিব</h3><p>CEO, Ai Sphere</p></div></div>
         </div>
     </div>
 
@@ -153,12 +147,17 @@
         setTimeout(() => {
             const ss = document.getElementById('splash-screen');
             ss.style.opacity = '0';
-            setTimeout(() => { ss.style.display = 'none'; }, 1000);
+            setTimeout(() => { 
+                ss.style.display = 'none'; 
+                document.getElementById('login-container').style.display = 'flex';
+            }, 1000);
         }, 2000);
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
 
         function login() {
+            const name = document.getElementById('user-input').value;
+            if(name) document.getElementById('display-name').innerText = "স্বাগতম, " + name.toUpperCase();
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('home-page').style.display = 'block';
             document.getElementById('top-header').style.display = 'flex';
