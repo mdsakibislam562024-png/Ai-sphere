@@ -1,148 +1,193 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ai Sphere | Pro Final</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+    :root { --accent: #00d4ff; --blue-grad: radial-gradient(circle, #001fcc 0%, #000000 100%); }
+    body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
     
-    <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --accent-blue: #00d4ff;
-            --nav-bg: rgba(0, 0, 0, 0.95);
-        }
+    /* সাইডবার ডিজাইন */
+    #sidebar {
+        position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+        background: #000; z-index: 4000; transition: 0.4s;
+        border-right: 1px solid rgba(0,212,255,0.2); display: flex; flex-direction: column;
+    }
+    #sidebar.active { left: 0; }
+    .sidebar-header { padding: 20px; text-align: right; }
+    .sidebar-header i { color: var(--accent); font-size: 22px; cursor: pointer; padding: 10px; }
+    
+    .menu-item { 
+        padding: 15px 25px; display: flex; align-items: center; gap: 15px; 
+        font-size: 16px; cursor: pointer; transition: 0.3s; color: white;
+    }
+    .menu-item i { color: var(--accent); font-size: 18px; width: 25px; }
+    .menu-item:active { background: rgba(0,212,255,0.1); }
+    
+    .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid #111; }
+    .logout-item { color: #ff4b4b !important; font-weight: bold; }
+    .logout-item i { color: #ff4b4b !important; }
 
-        body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+    /* ওভারলে */
+    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 3999; }
 
-        /* স্প্ল্যাশ স্ক্রিন */
-        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #001fcc 0%, #000000 100%); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 1s ease; }
-        
-        /* হেডার */
-        .header-bar { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: var(--nav-bg); display: none; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 2100; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .header-btn { font-size: 20px; color: var(--accent-blue); cursor: pointer; }
+    /* হোমপেজ */
+    #home-page { display: none; height: 100vh; position: relative; }
+    .top-header { height: 60px; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: relative; z-index: 1000; }
+    .hamburger { font-size: 22px; color: white; cursor: pointer; padding: 5px; }
+    .logo { color: var(--accent); letter-spacing: 3px; font-weight: bold; font-size: 18px; position: absolute; left: 50%; transform: translateX(-50%); }
 
-        /* বটম নেভিগেশন */
-        .nav-bar { background: var(--nav-bg); padding: 10px 0; display: flex; justify-content: space-around; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); position: fixed; top: 60px; left: 0; z-index: 1000; }
-        .nav-item { color: #94a3b8; text-decoration: none; display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 9px; cursor: pointer; }
-        .nav-item.active { color: var(--accent-blue); }
+    .top-side-icons { display: flex; gap: 12px; }
+    .icon-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; background: rgba(255,255,255,0.1); cursor: pointer; }
+    .icon-circle:active { background: var(--accent); color: #000; }
 
-        /* সাইডবার */
-        .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--nav-bg); backdrop-filter: blur(15px); z-index: 3000; transition: 0.4s; border-right: 1px solid rgba(0, 212, 255, 0.2); display: flex; flex-direction: column; }
-        .sidebar.active { left: 0; }
-        .sidebar-header { padding: 20px; text-align: right; }
-        .sidebar-menu { flex-grow: 1; padding: 15px; }
-        .sidebar-item { display: flex; align-items: center; padding: 14px 12px; color: var(--text-color); cursor: pointer; border-radius: 10px; margin-bottom: 5px; }
-        .sidebar-item i { margin-right: 15px; color: var(--accent-blue); width: 20px; }
-        .sidebar-footer { padding: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .logout-btn { color: #ff4d4d !important; font-weight: bold; }
+    /* মেনু ট্যাব */
+    .nav-tabs { display: flex; justify-content: space-around; border-bottom: 1px solid #111; padding-bottom: 10px; position: relative; z-index: 1000; }
+    .tab { text-align: center; color: white; font-size: 11px; cursor: pointer; transition: 0.3s; opacity: 0.6; }
+    .tab i { display: block; font-size: 18px; margin-bottom: 3px; }
+    .tab.active { color: var(--accent) !important; opacity: 1; }
 
-        /* কন্টেন্ট */
-        .main-content { margin-top: 140px; padding: 20px; text-align: center; }
-        .view-section { display: none; }
-        .view-section.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* কক্ষপথ ও পৃথিবী */
+    .hero-section { height: calc(100vh - 180px); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    .main-container { position: relative; width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; animation: rotateBubbles 35s linear infinite; }
+    .earth-container { position: absolute; width: 130px; height: 130px; z-index: 5; animation: spinEarth 20s linear infinite; }
+    .earth-img { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,212,255,0.5)); }
 
-        /* পৃথিবী ও অরবিট */
-        .earth-wrapper { position: relative; width: 220px; height: 220px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
-        .main-earth-img { width: 170px; height: 170px; animation: smoothFloat 6s infinite ease-in-out; filter: drop-shadow(0 0 35px rgba(0, 212, 255, 0.4)); }
-        .photo-orbit { position: absolute; width: 135%; height: 135%; animation: orbitSpin 15s infinite linear; }
-        .mini-pic { position: absolute; width: 30px; height: 30px; border: 2px solid #fff; border-radius: 50%; background-size: cover; }
-        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes smoothFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        .p1 { top: 0; left: 50%; transform: translateX(-50%); background-image: url('https://i.pravatar.cc/100?u=1'); }
-        .p2 { top: 50%; right: 0; transform: translateY(-50%); background-image: url('https://i.pravatar.cc/100?u=2'); }
-        .p3 { bottom: 0; left: 50%; transform: translateX(-50%); background-image: url('https://i.pravatar.cc/100?u=3'); }
-        .p4 { top: 50%; left: 0; transform: translateY(-50%); background-image: url('https://i.pravatar.cc/100?u=4'); }
+    .user-bubble { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fff; overflow: hidden; z-index: 10; animation: keepBubblesUpright 35s linear infinite; background: #222; }
+    .b-top { top: 0; left: calc(50% - 25px); }
+    .b-bottom { bottom: 0; left: calc(50% - 25px); }
+    .b-left { left: 0; top: calc(50% - 25px); }
+    .b-right { right: 0; top: calc(50% - 25px); }
+    .user-bubble img { width: 100%; height: 100%; object-fit: cover; }
 
-        .card { background: rgba(255,255,255,0.07); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
-        .btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #0044ff, #00d4ff); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
+    @keyframes spinEarth { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes rotateBubbles { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes keepBubblesUpright { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
 
-    <div id="splash-screen"><h1>AI-SPHERE</h1></div>
+    .welcome-box { margin-top: 30px; text-align: center; }
 
-    <div id="top-header" class="header-bar">
-        <div class="header-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></div>
-        <div style="font-weight: bold; color: var(--accent-blue); letter-spacing: 2px;">AI SPHERE</div>
-        <div class="header-btn" onclick="showSection('chat-view')"><i class="fa-solid fa-comment-dots"></i></div>
-    </div>
+    /* লগইন */
+    #onboarding-wrapper { position: fixed; top: 0; width: 100%; height: 100%; background: var(--blue-grad); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+    .auth-container { width: 85%; max-width: 350px; text-align: center; }
+    input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: none; background: #e8f0fe; color: #333; box-sizing: border-box; }
+    .btn { width: 100%; padding: 14px; background: linear-gradient(to right, #0044ff, #00d4ff); border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
+</style>
 
-    <div id="sidebar" class="sidebar">
-        <div class="sidebar-header"><i class="fa-solid fa-arrow-left" style="cursor:pointer; color:var(--accent-blue);" onclick="toggleSidebar()"></i></div>
-        <div class="sidebar-menu">
-            <div class="sidebar-item" onclick="showSection('dashboard-view')"><i class="fa-solid fa-gauge-high"></i> ড্যাশবোর্ড</div>
-            <div class="sidebar-item"><i class="fa-solid fa-moon"></i> ডার্ক মোড</div>
-            <div class="sidebar-item"><i class="fa-solid fa-user-shield"></i> প্রাইভেসি</div>
-            <div class="sidebar-item"><i class="fa-solid fa-circle-info"></i> সাহায্য</div>
-        </div>
-        <div class="sidebar-footer">
-            <div class="sidebar-item logout-btn" onclick="location.reload()"><i class="fa-solid fa-power-off"></i> লগআউট</div>
-        </div>
-    </div>
-
-    <div id="login-container" style="display:none; height: 100vh; justify-content: center; align-items: center;">
-        <div class="card" style="width: 300px; text-align: center;">
-            <h2 style="color: var(--accent-blue);">Ai Sphere</h2>
-            <input type="text" id="user-input" placeholder="তোমার নাম" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#222; color:white; text-align:center;">
-            <button class="btn" onclick="login()">অ্যাক্সেস করুন</button>
+<div id="overlay" onclick="toggleSidebar()"></div>
+<div id="sidebar">
+    <div class="sidebar-header"><i class="fas fa-times" onclick="toggleSidebar()"></i></div>
+    <div class="menu-item"><i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড</div>
+    <div class="menu-item"><i class="fas fa-moon"></i> ডার্ক মোড</div>
+    <div class="menu-item"><i class="fas fa-user-shield"></i> প্রাইভেসি</div>
+    <div class="menu-item"><i class="fas fa-info-circle"></i> সাহায্য</div>
+    <div class="sidebar-footer">
+        <div class="menu-item logout-item" onclick="logoutNow()">
+            <i class="fas fa-power-off"></i> লগআউট
         </div>
     </div>
+</div>
 
-    <div id="home-page" style="display:none;">
-        <div class="nav-bar">
-            <a class="nav-item active" onclick="showSection('home-view', this)"><i class="fa-solid fa-house"></i><span>Home</span></a>
-            <a class="nav-item" onclick="showSection('reels-view', this)"><i class="fa-solid fa-bolt"></i><span>Reels</span></a>
-            <a class="nav-item" onclick="showSection('friends-view', this)"><i class="fa-solid fa-user-plus"></i><span>Friends</span></a>
-            <a class="nav-item" onclick="showSection('dashboard-view', this)"><i class="fa-solid fa-wallet"></i><span>Stats</span></a>
-            <a class="nav-item" onclick="showSection('profile-view', this)"><i class="fa-solid fa-fingerprint"></i><span>Profile</span></a>
+<div id="home-page">
+    <div class="top-header">
+        <i class="fas fa-bars hamburger" onclick="toggleSidebar()"></i>
+        <div class="logo">AI SPHERE</div>
+        <div class="top-side-icons">
+            <div class="icon-circle" onclick="alert('No Notifications')"><i class="fas fa-bell"></i></div>
+            <div class="icon-circle" onclick="alert('Messenger Soon')"><i class="fab fa-facebook-messenger"></i></div>
         </div>
+    </div>
 
-        <div class="main-content">
-            <div id="home-view" class="view-section active">
-                <div class="earth-wrapper">
-                    <img src="https://i.postimg.cc/t45s6sb2/1778359158913.png" alt="3D Earth" class="main-earth-img">
-                    <div class="photo-orbit">
-                        <div class="mini-pic p1"></div><div class="mini-pic p2"></div>
-                        <div class="mini-pic p3"></div><div class="mini-pic p4"></div>
-                    </div>
-                </div>
-                <h2 id="display-name" style="margin-top: 30px; letter-spacing: 3px;">WELCOME</h2>
+    <div class="nav-tabs">
+        <div class="tab active" onclick="switchTab(this)"><i class="fas fa-home"></i>Home</div>
+        <div class="tab" onclick="switchTab(this)"><i class="fas fa-bolt"></i>Reels</div>
+        <div class="tab" onclick="switchTab(this)"><i class="fas fa-users"></i>Friends</div>
+        <div class="tab" onclick="switchTab(this)"><i class="fas fa-wallet"></i>Stats</div>
+        <div class="tab" onclick="switchTab(this)"><i class="fas fa-fingerprint"></i>Profile</div>
+    </div>
+
+    <div class="hero-section">
+        <div class="main-container">
+            <div class="earth-container">
+                <img src="https://i.postimg.cc/t45s6sb2/1778359158913.png" class="earth-img">
             </div>
-            <div id="dashboard-view" class="view-section"><div class="card"><h3>৳ 1250</h3><p>আপনার ব্যালেন্স</p></div></div>
-            <div id="chat-view" class="view-section"><div class="card"><h3>Messages</h3><p>কোনো নতুন মেসেজ নেই।</p></div></div>
-            <div id="reels-view" class="view-section"><div class="card"><h3>Reels</h3><p>লোডিং রিলস...</p></div></div>
-            <div id="friends-view" class="view-section"><div class="card"><h3>Friends</h3><p>ফ্রেন্ড লিস্ট খালি।</p></div></div>
-            <div id="profile-view" class="view-section"><div class="card"><h3>সাকিব</h3><p>CEO, Ai Sphere</p></div></div>
+            <div class="user-bubble b-top"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150"></div>
+            <div class="user-bubble b-bottom"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"></div>
+            <div class="user-bubble b-left"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150"></div>
+            <div class="user-bubble b-right"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"></div>
+        </div>
+        <div class="welcome-box">
+            <h1 style="letter-spacing: 5px; margin: 0; font-size: 28px;">WELCOME</h1>
+            <div id="user-display" style="color:var(--accent); font-weight: bold; margin-top: 5px;"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        setTimeout(() => {
-            const ss = document.getElementById('splash-screen');
-            ss.style.opacity = '0';
-            setTimeout(() => { ss.style.display = 'none'; document.getElementById('login-container').style.display = 'flex'; }, 1000);
-        }, 2000);
+<div id="onboarding-wrapper">
+    <div class="auth-container">
+        <h2>Login</h2>
+        <input type="email" id="login-email" placeholder="ইমেইল">
+        <input type="password" id="login-pass" placeholder="পাসওয়ার্ড">
+        <button class="btn" onclick="loginUser()">প্রবেশ করুন</button>
+    </div>
+</div>
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
+        authDomain: "ai-sphere-2.firebaseapp.com",
+        databaseURL: "https://ai-sphere-2-default-rtdb.firebaseio.com",
+        projectId: "ai-sphere-2",
+        appId: "1:287882935194:web:2401447236fb80b26f5823"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-        function login() {
-            const name = document.getElementById('user-input').value;
-            if(name) document.getElementById('display-name').innerText = "স্বাগতম, " + name.toUpperCase();
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('home-page').style.display = 'block';
-            document.getElementById('top-header').style.display = 'flex';
+    // সাইডবার ফাংশন - একদম ফিক্সড
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('active');
+        overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+    }
+
+    // ট্যাব সুইচিং ফাংশন - ফিক্সড
+    function switchTab(el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    auth.onAuthStateChanged(user => {
+        if(user) {
+            db.ref('users/' + user.uid).once('value', snap => {
+                showApp(snap.val() ? snap.val().name : user.email.split('@')[0]);
+            });
+        } else {
+            showLogin();
         }
+    });
 
-        function showSection(id, element) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            if(element) element.classList.add('active');
-            if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
-        }
-    </script>
-</body>
-</html>
+    function showApp(name) {
+        document.getElementById('onboarding-wrapper').style.display = 'none';
+        document.getElementById('home-page').style.display = 'block';
+        document.getElementById('user-display').innerText = name.toUpperCase();
+    }
+
+    function showLogin() {
+        document.getElementById('home-page').style.display = 'none';
+        document.getElementById('onboarding-wrapper').style.display = 'flex';
+    }
+
+    function loginUser() {
+        const e = document.getElementById('login-email').value, p = document.getElementById('login-pass').value;
+        if(!e || !p) return alert("ইমেইল ও পাসওয়ার্ড দাও!");
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert("ভুল তথ্য!"));
+    }
+
+    function logoutNow() {
+        auth.signOut().then(() => {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').style.display = 'none';
+        });
+    }
+</script>
