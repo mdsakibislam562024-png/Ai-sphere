@@ -7,28 +7,21 @@
     :root { --accent: #00d4ff; --blue-grad: radial-gradient(circle, #001fcc 0%, #000000 100%); }
     body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
     
-    /* সাইডবার ডিজাইন */
+    /* সাইডবার */
     #sidebar {
         position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-        background: #000; z-index: 4000; transition: 0.4s;
+        background: #000; z-index: 4000; transition: 0.3s;
         border-right: 1px solid rgba(0,212,255,0.2); display: flex; flex-direction: column;
     }
     #sidebar.active { left: 0; }
     .sidebar-header { padding: 20px; text-align: right; }
     .sidebar-header i { color: var(--accent); font-size: 22px; cursor: pointer; padding: 10px; }
     
-    .menu-item { 
-        padding: 15px 25px; display: flex; align-items: center; gap: 15px; 
-        font-size: 16px; cursor: pointer; transition: 0.3s; color: white;
-    }
+    .menu-item { padding: 15px 25px; display: flex; align-items: center; gap: 15px; font-size: 16px; cursor: pointer; transition: 0.2s; color: white; }
     .menu-item i { color: var(--accent); font-size: 18px; width: 25px; }
-    .menu-item:active { background: rgba(0,212,255,0.1); }
-    
     .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid #111; }
-    .logout-item { color: #ff4b4b !important; font-weight: bold; }
-    .logout-item i { color: #ff4b4b !important; }
+    .logout-item { color: #ff4b4b !important; font-weight: bold; cursor: pointer; }
 
-    /* ওভারলে */
     #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 3999; }
 
     /* হোমপেজ */
@@ -37,40 +30,50 @@
     .hamburger { font-size: 22px; color: white; cursor: pointer; padding: 5px; }
     .logo { color: var(--accent); letter-spacing: 3px; font-weight: bold; font-size: 18px; position: absolute; left: 50%; transform: translateX(-50%); }
 
+    /* টপ আইকনস */
     .top-side-icons { display: flex; gap: 12px; }
-    .icon-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; background: rgba(255,255,255,0.1); cursor: pointer; }
-    .icon-circle:active { background: var(--accent); color: #000; }
+    .icon-circle { 
+        width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-size: 18px; color: white; background: rgba(255,255,255,0.1); cursor: pointer; position: relative; transition: 0.2s;
+    }
+    .icon-circle.active-pop { color: var(--accent); box-shadow: 0 0 15px var(--accent); background: rgba(0, 212, 255, 0.1); }
 
-    /* মেনু ট্যাব */
+    /* নেভিগেশন ট্যাব */
     .nav-tabs { display: flex; justify-content: space-around; border-bottom: 1px solid #111; padding-bottom: 10px; position: relative; z-index: 1000; }
-    .tab { text-align: center; color: white; font-size: 11px; cursor: pointer; transition: 0.3s; opacity: 0.6; }
+    .tab { text-align: center; color: white; font-size: 11px; cursor: pointer; transition: 0.2s; opacity: 0.5; flex: 1; padding: 5px 0; position: relative; }
     .tab i { display: block; font-size: 18px; margin-bottom: 3px; }
     .tab.active { color: var(--accent) !important; opacity: 1; }
+    .tab.active::after {
+        content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+        width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent); animation: popFast 0.2s ease-out;
+    }
 
-    /* কক্ষপথ ও পৃথিবী */
+    /* হিরো সেকশন ও এনিমেশন */
     .hero-section { height: calc(100vh - 180px); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
     .main-container { position: relative; width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; animation: rotateBubbles 35s linear infinite; }
-    .earth-container { position: absolute; width: 130px; height: 130px; z-index: 5; animation: spinEarth 20s linear infinite; }
-    .earth-img { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,212,255,0.5)); }
+    
+    .earth-container { position: absolute; width: 140px; height: 140px; z-index: 5; animation: spinEarth 20s linear infinite; }
+    .earth-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 15px rgba(0,212,255,0.4)); }
 
     .user-bubble { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fff; overflow: hidden; z-index: 10; animation: keepBubblesUpright 35s linear infinite; background: #222; }
-    .b-top { top: 0; left: calc(50% - 25px); }
-    .b-bottom { bottom: 0; left: calc(50% - 25px); }
-    .b-left { left: 0; top: calc(50% - 25px); }
+    .b-top { top: 0; left: calc(50% - 25px); } 
+    .b-bottom { bottom: 0; left: calc(50% - 25px); } 
+    .b-left { left: 0; top: calc(50% - 25px); } 
     .b-right { right: 0; top: calc(50% - 25px); }
     .user-bubble img { width: 100%; height: 100%; object-fit: cover; }
 
     @keyframes spinEarth { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes rotateBubbles { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes keepBubblesUpright { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+    @keyframes popFast { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
 
-    .welcome-box { margin-top: 30px; text-align: center; }
-
-    /* লগইন */
+    /* অথেন্টিকেশন */
     #onboarding-wrapper { position: fixed; top: 0; width: 100%; height: 100%; background: var(--blue-grad); display: flex; align-items: center; justify-content: center; z-index: 10000; }
     .auth-container { width: 85%; max-width: 350px; text-align: center; }
     input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: none; background: #e8f0fe; color: #333; box-sizing: border-box; }
     .btn { width: 100%; padding: 14px; background: linear-gradient(to right, #0044ff, #00d4ff); border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
+    .switch-text { margin-top: 20px; font-size: 13px; cursor: pointer; color: #00d4ff; text-decoration: underline; }
 </style>
 
 <div id="overlay" onclick="toggleSidebar()"></div>
@@ -79,11 +82,20 @@
     <div class="menu-item"><i class="fas fa-tachometer-alt"></i> ড্যাশবোর্ড</div>
     <div class="menu-item"><i class="fas fa-moon"></i> ডার্ক মোড</div>
     <div class="menu-item"><i class="fas fa-user-shield"></i> প্রাইভেসি</div>
+    <div class="menu-item"><i class="fas fa-cog"></i> সেটিং</div>
     <div class="menu-item"><i class="fas fa-info-circle"></i> সাহায্য</div>
     <div class="sidebar-footer">
-        <div class="menu-item logout-item" onclick="logoutNow()">
-            <i class="fas fa-power-off"></i> লগআউট
-        </div>
+        <div class="menu-item logout-item" onclick="logoutUser()"><i class="fas fa-power-off"></i> লগআউট</div>
+    </div>
+</div>
+
+<div id="onboarding-wrapper">
+    <div class="auth-container">
+        <h2 id="auth-title">LOGIN</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button class="btn" onclick="handleAuth()" id="main-btn">Login</button>
+        <p class="switch-text" onclick="toggleAuthMode()" id="toggle-auth">Don't have an account? Sign Up</p>
     </div>
 </div>
 
@@ -92,8 +104,8 @@
         <i class="fas fa-bars hamburger" onclick="toggleSidebar()"></i>
         <div class="logo">AI SPHERE</div>
         <div class="top-side-icons">
-            <div class="icon-circle" onclick="alert('No Notifications')"><i class="fas fa-bell"></i></div>
-            <div class="icon-circle" onclick="alert('Messenger Soon')"><i class="fab fa-facebook-messenger"></i></div>
+            <div class="icon-circle" onclick="topIconPop(this)"><i class="fas fa-bell"></i></div>
+            <div class="icon-circle" onclick="topIconPop(this)"><i class="fab fa-facebook-messenger"></i></div>
         </div>
     </div>
 
@@ -108,42 +120,44 @@
     <div class="hero-section">
         <div class="main-container">
             <div class="earth-container">
-                <img src="https://i.postimg.cc/t45s6sb2/1778359158913.png" class="earth-img">
+                <img src="https://i.postimg.cc/5Nt8D9Ln/1778359158913.png" class="earth-img">
             </div>
-            <div class="user-bubble b-top"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150"></div>
-            <div class="user-bubble b-bottom"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"></div>
-            <div class="user-bubble b-left"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150"></div>
-            <div class="user-bubble b-right"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"></div>
+            <div class="user-bubble b-top"><img src="https://i.pravatar.cc/150?u=11"></div>
+            <div class="user-bubble b-bottom"><img src="https://i.pravatar.cc/150?u=22"></div>
+            <div class="user-bubble b-left"><img src="https://i.pravatar.cc/150?u=33"></div>
+            <div class="user-bubble b-right"><img src="https://i.pravatar.cc/150?u=44"></div>
         </div>
         <div class="welcome-box">
-            <h1 style="letter-spacing: 5px; margin: 0; font-size: 28px;">WELCOME</h1>
-            <div id="user-display" style="color:var(--accent); font-weight: bold; margin-top: 5px;"></div>
+            <h2 id="user-display-name" style="letter-spacing: 3px; color: var(--accent); font-size: 16px;">WELCOME</h2>
         </div>
-    </div>
-</div>
-
-<div id="onboarding-wrapper">
-    <div class="auth-container">
-        <h2>Login</h2>
-        <input type="email" id="login-email" placeholder="ইমেইল">
-        <input type="password" id="login-pass" placeholder="পাসওয়ার্ড">
-        <button class="btn" onclick="loginUser()">প্রবেশ করুন</button>
     </div>
 </div>
 
 <script>
     const firebaseConfig = {
-        apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
-        authDomain: "ai-sphere-2.firebaseapp.com",
-        databaseURL: "https://ai-sphere-2-default-rtdb.firebaseio.com",
-        projectId: "ai-sphere-2",
-        appId: "1:287882935194:web:2401447236fb80b26f5823"
+      apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
+      authDomain: "ai-sphere-2.firebaseapp.com",
+      databaseURL: "https://ai-sphere-2-default-rtdb.firebaseio.com",
+      projectId: "ai-sphere-2",
+      storageBucket: "ai-sphere-2.firebasestorage.app",
+      messagingSenderId: "287882935194",
+      appId: "1:287882935194:web:2401447236fb80b26f5823"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
 
-    // সাইডবার ফাংশন - একদম ফিক্সড
+    function switchTab(element) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    function topIconPop(element) {
+        document.querySelectorAll('.icon-circle').forEach(i => i.classList.remove('active-pop'));
+        element.classList.add('active-pop');
+        setTimeout(() => element.classList.remove('active-pop'), 800);
+    }
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
@@ -151,43 +165,41 @@
         overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
     }
 
-    // ট্যাব সুইচিং ফাংশন - ফিক্সড
-    function switchTab(el) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
+    function toggleAuthMode() {
+        const title = document.getElementById('auth-title');
+        const btn = document.getElementById('main-btn');
+        const link = document.getElementById('toggle-auth');
+        if (title.innerText === 'LOGIN') {
+            title.innerText = 'SIGN UP'; btn.innerText = 'Sign Up'; link.innerText = 'Already have an account? Login';
+        } else {
+            title.innerText = 'LOGIN'; btn.innerText = 'Login'; link.innerText = "Don't have an account? Sign Up";
+        }
+    }
+
+    function handleAuth() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) return alert("Email and Password required!");
+        const isLogin = document.getElementById('auth-title').innerText === 'LOGIN';
+        
+        if (isLogin) auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+        else auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
     }
 
     auth.onAuthStateChanged(user => {
-        if(user) {
-            db.ref('users/' + user.uid).once('value', snap => {
-                showApp(snap.val() ? snap.val().name : user.email.split('@')[0]);
-            });
+        if (user) {
+            document.getElementById('onboarding-wrapper').style.display = 'none';
+            document.getElementById('home-page').style.display = 'block';
+            document.getElementById('user-display-name').innerText = "WELCOME, " + user.email.split('@')[0].toUpperCase();
         } else {
-            showLogin();
+            document.getElementById('onboarding-wrapper').style.display = 'flex';
+            document.getElementById('home-page').style.display = 'none';
         }
     });
 
-    function showApp(name) {
-        document.getElementById('onboarding-wrapper').style.display = 'none';
-        document.getElementById('home-page').style.display = 'block';
-        document.getElementById('user-display').innerText = name.toUpperCase();
-    }
-
-    function showLogin() {
-        document.getElementById('home-page').style.display = 'none';
-        document.getElementById('onboarding-wrapper').style.display = 'flex';
-    }
-
-    function loginUser() {
-        const e = document.getElementById('login-email').value, p = document.getElementById('login-pass').value;
-        if(!e || !p) return alert("ইমেইল ও পাসওয়ার্ড দাও!");
-        auth.signInWithEmailAndPassword(e, p).catch(err => alert("ভুল তথ্য!"));
-    }
-
-    function logoutNow() {
-        auth.signOut().then(() => {
-            document.getElementById('sidebar').classList.remove('active');
-            document.getElementById('overlay').style.display = 'none';
-        });
+    function logoutUser() {
+        auth.signOut();
+        const sidebar = document.getElementById('sidebar');
+        if(sidebar.classList.contains('active')) toggleSidebar();
     }
 </script>
