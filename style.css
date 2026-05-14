@@ -1,0 +1,134 @@
+:root { 
+    --accent: #00d4ff; 
+    --blue-grad: radial-gradient(circle, #001fcc 0%, #000000 100%); 
+    --bg-dark: #000;
+}
+
+* { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh; }
+
+/* --- FULL SCREEN PAGES --- */
+#reels-section, #friends-section, #stats-section, #messages-section, #profile-page, #global-feed-section {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100vh;
+    background: var(--bg-dark);
+    z-index: 5000;
+    overflow-y: auto;
+    display: none;
+}
+
+/* --- EARTH BUTTON INTERACTION --- */
+.earth-container { 
+    position: absolute; width: 180px; height: 180px; z-index: 5; 
+    animation: spin 20s linear infinite;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.earth-container:active {
+    transform: scale(0.9); /* ক্লিক করলে একটু ছোট হবে */
+}
+
+/* --- POST BAR STYLES --- */
+.post-bar {
+    transition: 0.3s;
+}
+.post-bar input::placeholder {
+    color: #555;
+    font-size: 13px;
+}
+
+/* --- GLOBAL POST CARD --- */
+.post-card {
+    background: #0a0a0a; 
+    padding: 15px; 
+    border-radius: 12px; 
+    margin-bottom: 15px; 
+    border: 1px solid #1a1a1a;
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- SIDEBAR & OVERLAY --- */
+.sidebar {
+    position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+    background: #0a0a0a; z-index: 15000;
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 5px 0 15px rgba(0,0,0,.5);
+    padding: 20px; border-right: 1px solid #111;
+}
+.sidebar.active { left: 0; }
+
+.sidebar-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 18px; font-weight: bold; color: var(--accent);
+    margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #222;
+}
+
+.sidebar-item {
+    padding: 15px 10px; font-size: 14px; color: #ccc;
+    cursor: pointer; transition: 0.3s; border-radius: 8px; margin-bottom: 5px;
+}
+.sidebar-item:hover { background: #111; color: var(--accent); }
+.sidebar-item i { width: 25px; margin-right: 10px; }
+
+#overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    z-index: 14000; display: none; backdrop-filter: blur(3px);
+}
+
+/* AUTHENTICATION */
+#onboarding-wrapper { position: fixed; inset: 0; background: var(--blue-grad); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+.auth-container { width: 85%; max-width: 320px; text-align: center; }
+.auth-in { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: none; background: #e8f0fe; outline: none; color: #333; }
+.btn-auth { width: 100%; padding: 12px; background: linear-gradient(to right, #0044ff, #00d4ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.btn-auth:active { transform: scale(0.95); }
+#auth-switch { color: var(--accent); font-size: 12px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
+
+/* MAIN PAGE & NAVIGATION */
+#home-page { display: none; flex-direction: column; height: 100vh; }
+.top-header { height: 60px; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: relative; }
+.logo { color: var(--accent); font-weight: bold; letter-spacing: 2px; position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; }
+
+.nav-tabs { display: flex; justify-content: space-around; border-bottom: 1px solid #111; padding: 5px 0; }
+.tab { text-align: center; color: white; font-size: 9px; cursor: pointer; opacity: 0.5; flex: 1; padding: 10px 0; }
+.tab i { display: block; font-size: 18px; margin-bottom: 3px; }
+.tab.active { color: var(--accent); opacity: 1; }
+.content-area { flex: 1; overflow-y: auto; }
+
+/* REELS & PROFILE */
+.reels-header { background: var(--bg-dark); padding: 15px; }
+.reels-search input { background: transparent; border: none; color: white; width: 100%; outline: none; }
+.toggle-btn { transition: 0.3s; border: 1px solid #333; }
+.toggle-btn.active { background: var(--accent) !important; color: #000 !important; font-weight: bold; }
+
+.cover-photo { width: 100%; height: 140px; background: #111; position: relative; }
+.cover-photo img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+.profile-header-info { margin-top: -50px; position: relative; text-align: center; }
+.profile-pic-box { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #000; overflow: hidden; margin: 0 auto; box-shadow: 0 0 15px var(--accent); }
+.profile-pic-box img { width: 100%; height: 100%; object-fit: cover; }
+.stats-row { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+.stats-row span { display: block; font-size: 10px; color: #777; }
+
+/* ANIMATIONS */
+#hero-section { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-top: 50px; }
+.main-container { position: relative; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; animation: rotateBubbles 35s linear infinite; }
+.earth-img { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,212,255,0.5)); }
+
+.user-bubble {
+    position: absolute; width: 50px; height: 50px; border-radius: 50%;
+    border: 2px solid var(--accent); overflow: hidden; background: #111;
+    animation: keepUpright 35s linear infinite; box-shadow: 0 0 10px rgba(0,212,255,.3);
+}
+.user-bubble img { width: 100%; height: 100%; object-fit: cover; }
+
+.b-top { top: -20px; left: 50%; transform: translateX(-50%); }
+.b-bottom { bottom: -20px; left: 50%; transform: translateX(-50%); }
+.b-left { left: -20px; top: 50%; transform: translateY(-50%); }
+.b-right { right: -20px; top: 50%; transform: translateY(-50%); }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes rotateBubbles { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes keepUpright { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
