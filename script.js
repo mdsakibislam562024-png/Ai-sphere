@@ -15,6 +15,29 @@ const db = firebase.firestore();
 let isLoginMode = true;
 const $ = id => document.getElementById(id);
 
+// --- Cloudinary Config ---
+const cloudName = "ddcdcbepv"; 
+const uploadPreset = "aisphere_preset"; 
+
+// --- Cloudinary Upload Function ---
+async function uploadToCloudinary(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    try {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+        return data.secure_url; 
+    } catch (error) {
+        console.error("Cloudinary Upload Error:", error);
+        return null;
+    }
+}
+
 // --- Sidebar & Auth ---
 const toggleSidebar = () => {
     const active = $('sidebar').classList.toggle('active');
@@ -41,7 +64,7 @@ const handleAuth = () => {
 };
 
 // --- NAVIGATION LOGIC ---
-const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section'];
+const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section', 'about-page', 'privacy-page', 'settings-page'];
 
 function nav(page, addHistory = true) {
     sections.forEach(s => $(s) && ($(s).style.display = 'none'));
@@ -50,12 +73,20 @@ function nav(page, addHistory = true) {
         $('hero-section').style.display = 'flex';
     } else {
         const target = page === 'profile' ? 'profile-page' : 
-                       page === 'global-feed' ? 'global-feed-section' : page + '-section';
+                       page === 'global-feed' ? 'global-feed-section' : 
+                       page === 'reels' ? 'reels-section' : 
+                       page === 'about' ? 'about-page' : 
+                       page === 'privacy' ? 'privacy-page' : 
+                       page === 'settings' ? 'settings-page' : page + '-section';
         
         if($(target)) {
-            $(target).style.display = 'block';
+            $(target).style.display = 'block'; 
             if (page === 'global-feed') loadPosts();
-            if (page === 'profile') loadMyPosts();
+            if (page === 'profile') {
+                loadUserProfile(); // ইউজার প্রোফাইল ডাটা লোড
+                loadMyPosts();
+            }
+            if (page === 'reels') loadReels(); 
         }
     }
 
@@ -65,114 +96,143 @@ function nav(page, addHistory = true) {
     if($('sidebar').classList.contains('active')) toggleSidebar();
 }
 
-window.onpopstate = (event) => {
-    const page = (event.state && event.state.page) ? event.state.page : 'home';
-    nav(page, false);
+const openAbout = () => nav('about');
+const closeAbout = () => nav('home');
+const openPrivacy = () => nav('privacy');
+const closePrivacy = () => nav('home');
+const openSettings = () => nav('settings');
+const closeSettings = () => nav('home');
+
+// --- SETTINGS ---
+const changePassword = () => {
+    const newPassword = prompt("সাকিব, তোমার নতুন পাসওয়ার্ডটি এখানে দাও:");
+    if (newPassword && newPassword.length >= 6) {
+        auth.currentUser.updatePassword(newPassword).then(() => alert("সফল!")).catch(e => alert(e.message));
+    }
 };
 
-// --- POST & INTERACTION SYSTEM ---
-const handlePostSubmit = () => {
-    const content = $('post-input').value;
-    const user = auth.currentUser;
-    if (!content.trim()) return alert("কিছু লিখুন!");
+let isDarkMode = true;
+const toggleDarkMode = () => {
+    isDarkMode = !isDarkMode;
+    const root = document.documentElement;
+    if (isDarkMode) {
+        root.style.setProperty('--bg-dark', '#000000');
+        root.style.setProperty('--text-color', '#ffffff');
+    } else {
+        root.style.setProperty('--bg-dark', '#ffffff');
+        root.style.setProperty('--text-color', '#000000');
+    }
+};
 
+const confirmDelete = () => {
+    if(confirm("অ্যাকাউন্ট ডিলিট করতে চাও?")) {
+        auth.currentUser.delete().then(() => location.reload()).catch(e => alert(e.message));
+    }
+};
+
+window.onpopstate = (e) => nav(e.state?.page || 'home', false);
+
+// --- PROFILE & COVER UPDATE SYSTEM ---
+async function updateProfileMedia(type) {
+    const fileInput = type === 'profile' ? $('profile-upload') : $('cover-upload');
+    const file = fileInput.files[0];
+    const user = auth.currentUser;
+
+    if (!file || !user) return;
+
+    // লোডিং ফিডব্যাক
+    console.log(`${type} uploading...`);
+    
+    const imageUrl = await uploadToCloudinary(file);
+
+    if (imageUrl) {
+        const userRef = db.collection("users").doc(user.uid);
+        
+        userRef.set({
+            [type + "Pic"]: imageUrl,
+            email: user.email,
+            username: user.email.split('@')[0]
+        }, { merge: true }).then(() => {
+            if (type === 'profile') {
+                $('my-profile-img').src = imageUrl;
+            } else {
+                $('my-cover-img').src = imageUrl;
+            }
+            alert("Success: " + type.charAt(0).toUpperCase() + type.slice(1) + " updated!");
+        }).catch(e => alert("Firestore Error: " + e.message));
+    }
+}
+
+const loadUserProfile = () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    db.collection("users").doc(user.uid).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.profilePic) $('my-profile-img').src = data.profilePic;
+            if (data.coverPic) $('my-cover-img').src = data.coverPic;
+            $('profile-name').innerText = data.username ? data.username.toUpperCase() : user.email.split('@')[0].toUpperCase();
+        }
+    });
+};
+
+// --- POST SYSTEM ---
+const handlePostSubmit = async () => {
+    const content = $('post-input').value;
+    const imageFile = $('post-image-input')?.files[0];
+    if (!content.trim() && !imageFile) return;
+
+    let imageUrl = imageFile ? await uploadToCloudinary(imageFile) : null;
     db.collection("posts").add({
         text: content,
-        author: user ? user.email.split('@')[0] : 'SAKIB', 
+        image: imageUrl,
+        author: auth.currentUser?.email.split('@')[0] || 'SAKIB',
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         likes: 0
     }).then(() => {
-        $('post-input').value = ""; 
+        $('post-input').value = "";
+        alert("পোস্ট হয়েছে!");
     });
 };
 
-const handleLike = (postId) => {
-    db.collection("posts").doc(postId).update({
-        likes: firebase.firestore.FieldValue.increment(1)
+const handleLike = (id) => db.collection("posts").doc(id).update({ likes: firebase.firestore.FieldValue.increment(1) });
+
+const toggleCommentBox = (id) => {
+    const box = $(`comment-box-${id}`);
+    if(box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+};
+
+const loadComments = (id) => {
+    db.collection("posts").doc(id).collection("comments").orderBy("timestamp", "asc").onSnapshot(snap => {
+        const count = $(`comment-count-${id}`);
+        if(count) count.innerText = snap.size;
     });
 };
 
-const handleCommentSubmit = (postId) => {
-    const input = $(`comment-in-${postId}`);
-    const user = auth.currentUser;
-    if (!input.value.trim()) return;
+const handleShare = () => { navigator.clipboard.writeText(window.location.href); alert("লিঙ্ক কপি হয়েছে!"); };
 
-    db.collection("posts").doc(postId).collection("comments").add({
-        text: input.value,
-        author: user ? user.email.split('@')[0] : 'User',
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => { input.value = ""; });
-};
-
-const toggleCommentBox = (postId) => {
-    const box = $(`comment-box-${postId}`);
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
-};
-
-const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert("লিঙ্ক কপি করা হয়েছে!");
-};
-
-// কমেন্ট লোড করার ফাংশন (উন্নত সংস্করণ)
-const loadComments = (postId) => {
-    db.collection("posts").doc(postId).collection("comments").orderBy("timestamp", "asc").onSnapshot((snap) => {
-        const list = $(`comments-list-${postId}`);
-        const countSpan = $(`comment-count-${postId}`);
-        
-        if (list) {
-            list.innerHTML = "";
-            snap.forEach(cDoc => {
-                const cData = cDoc.data();
-                list.innerHTML += `<div style="background: #1a1a1a; padding: 8px; border-radius: 10px; margin-bottom: 5px; border: 1px solid #222;">
-                    <strong style="font-size: 10px; color: var(--accent);">${cData.author}</strong>
-                    <p style="font-size: 11px; color: #bbb; margin: 2px 0;">${cData.text}</p>
-                </div>`;
-            });
-        }
-        
-        if (countSpan) {
-            countSpan.innerText = snap.size;
-        }
-    });
-};
-
-// কার্ড তৈরি করার ফাংশন
 const createPostHTML = (id, data) => {
-    return `
-        <div class="post-card" style="background: #111; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #222;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <img src="https://i.postimg.cc/85zXp9mX/user-placeholder.png" style="width: 30px; height: 30px; border-radius: 50%;">
-                <div>
-                    <h4 style="font-size: 13px; color: var(--accent); text-transform: uppercase;">${data.author}</h4>
-                    <p style="font-size: 9px; color: #555;">${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'Just now'}</p>
-                </div>
-            </div>
-            <p style="font-size: 14px; color: #ccc; margin-bottom: 15px;">${data.text}</p>
-            <div style="display: flex; justify-content: space-between; border-top: 1px solid #222; padding-top: 10px;">
-                <div style="display: flex; gap: 20px;">
-                    <span onclick="handleLike('${id}')" style="cursor: pointer; color: #777; font-size: 13px;"><i class="fas fa-heart"></i> ${data.likes || 0}</span>
-                    <span onclick="toggleCommentBox('${id}')" style="cursor: pointer; color: #777; font-size: 13px;"><i class="fas fa-comment"></i> <span id="comment-count-${id}">0</span></span>
-                </div>
-                <span onclick="handleShare()" style="cursor: pointer; color: #777; font-size: 13px;"><i class="fas fa-share"></i> Share</span>
-            </div>
-            <div id="comment-box-${id}" style="display: none; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px;">
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="comment-in-${id}" placeholder="কমেন্ট লিখুন..." style="background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 20px; padding: 5px 15px; flex: 1; outline: none; font-size: 12px;">
-                    <button onclick="handleCommentSubmit('${id}')" style="background: var(--accent); border: none; color: black; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
-                </div>
-                <div id="comments-list-${id}"></div>
-            </div>
-        </div>`;
+    let media = "";
+    if (data.image) {
+        const isVideo = data.image.match(/\.(mp4|webm|ogg|mov)/i) || data.image.includes("/video/upload/");
+        media = isVideo ? `<video src="${data.image}" controls style="width:100%; border-radius:12px; margin:10px 0;"></video>` 
+                        : `<img src="${data.image}" style="width:100%; border-radius:12px; margin:10px 0;">`;
+    }
+    return `<div class="post-card">
+        <strong>@${data.author}</strong><p>${data.text}</p>${media}
+        <div style="display:flex; gap:15px; margin-top:10px;">
+            <span onclick="handleLike('${id}')">❤️ ${data.likes || 0}</span>
+            <span onclick="toggleCommentBox('${id}')"> <span id="comment-count-${id}">0</span></span>
+        </div>
+    </div>`;
 };
 
 const loadPosts = () => {
-    db.collection("posts").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
-        const displayArea = $('post-display-area');
-        if(!displayArea) return;
-        displayArea.innerHTML = ""; 
-        snapshot.forEach((doc) => {
-            displayArea.innerHTML += createPostHTML(doc.id, doc.data());
+    db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snap => {
+        $('post-display-area').innerHTML = "";
+        snap.forEach(doc => {
+            $('post-display-area').innerHTML += createPostHTML(doc.id, doc.data());
             loadComments(doc.id);
         });
     });
@@ -181,21 +241,52 @@ const loadPosts = () => {
 const loadMyPosts = () => {
     const user = auth.currentUser;
     if (!user) return;
-    const authorName = user.email.split('@')[0];
-    
-    db.collection("posts").where("author", "==", authorName).orderBy("timestamp", "desc").onSnapshot((snap) => {
-        const area = $('user-posts-area');
-        if(!area) return;
-        area.innerHTML = "";
-        
-        snap.forEach(doc => {
-            area.innerHTML += createPostHTML(doc.id, doc.data());
-            loadComments(doc.id);
+    db.collection("posts").where("author", "==", user.email.split('@')[0]).onSnapshot(snap => {
+        $('user-posts-area').innerHTML = "";
+        snap.forEach(doc => $('user-posts-area').innerHTML += createPostHTML(doc.id, doc.data()));
+    });
+};
+
+// --- REELS SYSTEM ---
+const loadReels = () => {
+    db.collection("posts").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+        const reelsArea = $('reels-section');
+        if(!reelsArea) return;
+        reelsArea.innerHTML = ""; 
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const isVideo = data.image && (data.image.match(/\.(mp4|webm|ogg|mov)/i) || data.image.includes("/video/upload/"));
+            if (isVideo) {
+                reelsArea.innerHTML += `
+                    <div class="reel-card" style="position: relative; height: 100%; background: #000; scroll-snap-align: start;">
+                        <video src="${data.image}" loop muted playsinline 
+                            style="width: 100%; height: 100%; object-fit: cover;"
+                            onclick="this.paused ? this.play() : this.pause(); this.muted = false;">
+                        </video>
+                        
+                        <div style="position: absolute; bottom: 40px; left: 15px; color: #fff; z-index: 10; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            <h4 style="color: var(--accent); margin-bottom: 5px;">@${data.author}</h4>
+                            <p style="font-size: 13px; opacity: 0.9;">${data.text}</p>
+                        </div>
+                        
+                        <div style="position: absolute; right: 25px; bottom: 100px; display: flex; flex-direction: column; gap: 25px; color: #fff; z-index: 10; text-align: center;">
+                            <div onclick="handleLike('${doc.id}')" style="cursor: pointer;">
+                                <i class="fas fa-heart" style="font-size: 26px;"></i>
+                                <br><small style="font-weight: bold;">${data.likes || 0}</small>
+                            </div>
+                            <div onclick="toggleCommentBox('${doc.id}')" style="cursor: pointer;">
+                                <i class="fas fa-comment" style="font-size: 26px;"></i>
+                                <br><small id="comment-count-${doc.id}" style="font-weight: bold;">0</small>
+                            </div>
+                            <div onclick="handleShare()" style="cursor: pointer;">
+                                <i class="fas fa-share" style="font-size: 26px;"></i>
+                            </div>
+                        </div>
+                    </div>`;
+                loadComments(doc.id);
+            }
         });
     });
 };
 
-const openEdit = () => { $('i-name').value = $('d-name').innerText; $('i-bio').value = $('d-bio').innerText; $('edit-page').style.display = 'flex'; };
-const closeEdit = () => $('edit-page').style.display = 'none';
-const saveAll = () => { $('d-name').innerText = $('i-name').value; $('d-bio').innerText = $('i-bio').value; closeEdit(); };
-function switchVideoMode(mode) { const isShorts = mode === 'shorts'; $('btn-short-reels').classList.toggle('active', isShorts); $('btn-long-videos').classList.toggle('active', !isShorts); }
+const handleLogout = () => auth.signOut().then(() => location.reload());
