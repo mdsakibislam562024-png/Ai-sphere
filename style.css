@@ -1,14 +1,26 @@
 :root { 
     --accent: #00d4ff; 
     --blue-grad: radial-gradient(circle, #001fcc 0%, #000000 100%); 
-    --bg-dark: #000;
+    /* Default Dark Mode Colors */
+    --bg-dark: #000000;
+    --text-color: #ffffff;
+    --card-bg: #0a0a0a;
+    --border-color: #1a1a1a;
+    --sidebar-bg: #0a0a0a;
 }
 
 * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh; }
+
+body { 
+    background: var(--bg-dark); 
+    color: var(--text-color); 
+    overflow: hidden; 
+    height: 100vh; 
+    transition: background 0.3s, color 0.3s;
+}
 
 /* --- FULL SCREEN PAGES --- */
-#reels-section, #friends-section, #stats-section, #messages-section, #profile-page, #global-feed-section {
+#reels-section, #friends-section, #stats-section, #messages-section, #profile-page, #global-feed-section, #about-page, #privacy-page, #settings-page {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100vh;
     background: var(--bg-dark);
@@ -24,12 +36,17 @@ body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .earth-container:active {
-    transform: scale(0.9); /* ক্লিক করলে একটু ছোট হবে */
+    transform: scale(0.9);
 }
 
 /* --- POST BAR STYLES --- */
 .post-bar {
     transition: 0.3s;
+}
+.post-bar input {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
 .post-bar input::placeholder {
     color: #555;
@@ -38,40 +55,146 @@ body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh
 
 /* --- GLOBAL POST CARD --- */
 .post-card {
-    background: #0a0a0a; 
+    background: var(--card-bg); 
     padding: 15px; 
     border-radius: 12px; 
     margin-bottom: 15px; 
-    border: 1px solid #1a1a1a;
+    border: 1px solid var(--border-color);
     animation: fadeInUp 0.5s ease;
+    color: var(--text-color);
 }
 
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* --- PREMIUM POST CARD STYLES --- */
+.post-card {
+    background: #0d0d0d; /* হালকা ডার্ক শেড */
+    padding: 16px; 
+    border-radius: 16px; 
+    margin: 15px; 
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-color);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-user-pic {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    padding: 2px;
+}
+
+.post-info-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.post-time {
+    font-size: 11px;
+    color: #777;
+}
+
+.post-content {
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 15px;
+}
+
+/* শুধু পোস্টের ভেতরের ছবি বড় করার জন্য */
+.post-image {
+    width: 100% !important;   /* কার্ডের পুরো উইডথ নিবে */
+    height: auto !important;  /* ছবির রেশিও ঠিক রেখে বড় হবে */
+    max-height: 80vh;         /* খুব বেশি লম্বা যেন না হয়ে যায় */
+    object-fit: cover;        /* ছবিটা সুন্দরভাবে ফিট হবে */
+    display: block;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+/* পোস্ট কার্ডের ডানে বামে স্পেস কমাতে চাইলে */
+.post-card {
+    margin: 15px 8px !important; /* ৮ পিক্সেল মার্জিন দিলে ছবি আরও বড় দেখাবে */
+    padding: 12px !important;
+}
+
+/* Like, Comment, Share Buttons */
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #aaa;
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.action-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--accent);
+}
+
+.action-btn i {
+    font-size: 16px;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 
 /* --- SIDEBAR & OVERLAY --- */
 .sidebar {
     position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-    background: #0a0a0a; z-index: 15000;
+    background: var(--sidebar-bg); z-index: 15000;
     transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 5px 0 15px rgba(0,0,0,.5);
-    padding: 20px; border-right: 1px solid #111;
+    padding: 20px; border-right: 1px solid var(--border-color);
 }
 .sidebar.active { left: 0; }
 
 .sidebar-header {
     display: flex; justify-content: space-between; align-items: center;
     font-size: 18px; font-weight: bold; color: var(--accent);
-    margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #222;
+    margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-item {
-    padding: 15px 10px; font-size: 14px; color: #ccc;
+    padding: 15px 10px; font-size: 14px; color: var(--text-color);
     cursor: pointer; transition: 0.3s; border-radius: 8px; margin-bottom: 5px;
+    opacity: 0.8;
 }
-.sidebar-item:hover { background: #111; color: var(--accent); }
+.sidebar-item:hover { background: var(--border-color); color: var(--accent); opacity: 1; }
 .sidebar-item i { width: 25px; margin-right: 10px; }
 
 #overlay {
@@ -88,38 +211,38 @@ body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh
 #auth-switch { color: var(--accent); font-size: 12px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
 
 /* MAIN PAGE & NAVIGATION */
-#home-page { display: none; flex-direction: column; height: 100vh; }
-.top-header { height: 60px; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: relative; }
+#home-page { display: none; flex-direction: column; height: 100vh; background: var(--bg-dark); }
+.top-header { height: 60px; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: relative; background: var(--bg-dark); }
 .logo { color: var(--accent); font-weight: bold; letter-spacing: 2px; position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; }
 
-.nav-tabs { display: flex; justify-content: space-around; border-bottom: 1px solid #111; padding: 5px 0; }
-.tab { text-align: center; color: white; font-size: 9px; cursor: pointer; opacity: 0.5; flex: 1; padding: 10px 0; }
+.nav-tabs { display: flex; justify-content: space-around; border-bottom: 1px solid var(--border-color); padding: 5px 0; background: var(--bg-dark); }
+.tab { text-align: center; color: var(--text-color); font-size: 9px; cursor: pointer; opacity: 0.5; flex: 1; padding: 10px 0; }
 .tab i { display: block; font-size: 18px; margin-bottom: 3px; }
 .tab.active { color: var(--accent); opacity: 1; }
-.content-area { flex: 1; overflow-y: auto; }
+.content-area { flex: 1; overflow-y: auto; background: var(--bg-dark); }
 
 /* REELS & PROFILE */
 .reels-header { background: var(--bg-dark); padding: 15px; }
-.reels-search input { background: transparent; border: none; color: white; width: 100%; outline: none; }
-.toggle-btn { transition: 0.3s; border: 1px solid #333; }
+.reels-search input { background: transparent; border: none; color: var(--text-color); width: 100%; outline: none; }
+.toggle-btn { transition: 0.3s; border: 1px solid var(--border-color); color: var(--text-color); }
 .toggle-btn.active { background: var(--accent) !important; color: #000 !important; font-weight: bold; }
 
-.cover-photo { width: 100%; height: 140px; background: #111; position: relative; }
+.cover-photo { width: 100%; height: 140px; background: var(--card-bg); position: relative; }
 .cover-photo img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-.profile-header-info { margin-top: -50px; position: relative; text-align: center; }
-.profile-pic-box { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #000; overflow: hidden; margin: 0 auto; box-shadow: 0 0 15px var(--accent); }
+.profile-header-info { margin-top: -50px; position: relative; text-align: center; color: var(--text-color); }
+.profile-pic-box { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--bg-dark); overflow: hidden; margin: 0 auto; box-shadow: 0 0 15px var(--accent); }
 .profile-pic-box img { width: 100%; height: 100%; object-fit: cover; }
 .stats-row { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
 .stats-row span { display: block; font-size: 10px; color: #777; }
 
 /* ANIMATIONS */
-#hero-section { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-top: 50px; }
+#hero-section { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-top: 50px; background: var(--bg-dark); }
 .main-container { position: relative; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; animation: rotateBubbles 35s linear infinite; }
 .earth-img { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,212,255,0.5)); }
 
 .user-bubble {
     position: absolute; width: 50px; height: 50px; border-radius: 50%;
-    border: 2px solid var(--accent); overflow: hidden; background: #111;
+    border: 2px solid var(--accent); overflow: hidden; background: var(--card-bg);
     animation: keepUpright 35s linear infinite; box-shadow: 0 0 10px rgba(0,212,255,.3);
 }
 .user-bubble img { width: 100%; height: 100%; object-fit: cover; }
@@ -132,3 +255,50 @@ body { background: var(--bg-dark); color: white; overflow: hidden; height: 100vh
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes rotateBubbles { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes keepUpright { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+/* Settings Inner Styles for White Mode */
+#settings-page div, #about-page div, #privacy-page div {
+    color: var(--text-color);
+}
+/* Reels Container Styling */
+#reels-section {
+    scrollbar-width: none; /* Firefox এর জন্য scrollbar হাইড */
+}
+#reels-section::-webkit-scrollbar {
+    display: none; /* Chrome/Safari এর জন্য scrollbar হাইড */
+}
+
+/* Single Reel Card */
+.reel-card {
+    width: 100%;
+    height: calc(100vh - 60px); /* টপ হেডার বাদে বাকি অংশ */
+    scroll-snap-align: start;
+    position: relative;
+    background: #000;
+}
+
+.reel-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ভিডিও পুরো স্ক্রিন জুড়ে থাকবে */
+}
+
+/* Reels Info (User & Text) */
+.reel-info {
+    position: absolute;
+    bottom: 20px;
+    left: 15px;
+    z-index: 10;
+    color: white;
+}
+
+.reel-actions {
+    position: absolute;
+    right: 15px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    color: white;
+}
