@@ -45,6 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDark = localStorage.getItem('theme') !== 'light';
     if ($('darkModeCheckbox')) $('darkModeCheckbox').checked = isDark;
     document.body.classList.toggle('light-mode', !isDark);
+    
+    // ইউজার অলরেডি লগইন থাকলে অটোমেটিক ফ্রেন্ডস ট্র্যাকিং অন রাখার জন্য
+    auth.onAuthStateChanged(user => {
+        if (user && currentPage === 'friends') loadUsersForFollow();
+    });
 });
 
 const toggleDarkMode = () => {
@@ -62,24 +67,28 @@ const toggleSidebar = () => {
 window.onpopstate = (e) => {
     const target = e.state?.page || 'home';
     nav(target, false);
-    if (target === 'home' && ['dashboard', 'profile-security', 'wallet', 'refer', 'support', 'copyright', 'settings', 'privacy', 'about'].includes(currentPage)) {
+    if (target === 'home' && ['dashboard', 'profile-security', 'wallet', 'refer', 'support', 'copyright', 'settings', 'privacy', 'about', 'friends'].includes(currentPage)) {
         if (!$('sidebar').classList.contains('active')) toggleSidebar();
     } else if ($('sidebar').classList.contains('active')) toggleSidebar();
 };
 
-const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section', 'about-page', 'privacy-page', 'settings-page', 'dashboard-page', 'profile-security-page', 'wallet-page', 'refer-page', 'support-page', 'copyright-page'];
+// সেকশন লিস্ট
+const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section', 'about-page', 'privacy-page', 'settings-page', 'dashboard-page', 'profile-security-page', 'wallet-page', 'refer-page', 'support-page', 'copyright-page', 'friends-page'];
 
 function nav(page, addHistory = true) {
     sections.forEach(s => $(s) && ($(s).style.display = 'none'));
     if (page === 'home') {
         $('hero-section').style.display = 'flex';
     } else {
-        const target = page === 'profile' ? 'profile-page' : page === 'global-feed' ? 'global-feed-section' : page === 'reels' ? 'reels-section' : page === 'about' ? 'about-page' : page === 'privacy' ? 'privacy-page' : page === 'settings' ? 'settings-page' : ($(sections.includes(page + '-page')) ? page + '-page' : page + '-section');
+        const target = page === 'profile' ? 'profile-page' : page === 'global-feed' ? 'global-feed-section' : page === 'reels' ? 'reels-section' : page === 'about' ? 'about-page' : page === 'privacy' ? 'privacy-page' : page === 'settings' ? 'settings-page' : page === 'friends' ? 'friends-page' : ($(sections.includes(page + '-page')) ? page + '-page' : page + '-section');
         if ($(target)) {
-            $(target).style.display = 'block';
+            // যদি মেসেজ পেজ হয় তবে flex ডিসপ্লে হবে ফুল স্ক্রিনের জন্য, অন্যথায় block হবে
+            $(target).style.display = page === 'messages' ? 'flex' : 'block';
+            
             if (page === 'global-feed') loadPosts();
             if (page === 'profile') { loadUserProfile(); loadMyPosts(); }
             if (page === 'reels') loadReels();
+            if (page === 'friends') loadUsersForFollow(); // ফ্রেন্ডস পেজে গেলে ইউজার লিস্ট লোড হবে
         }
     }
     if (addHistory) history.pushState({ page }, "", "#" + page);
@@ -100,24 +109,27 @@ const toggleAuthMode = () => {
     $('auth-switch').innerText = isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login";
 };
 
-// handleAuth ফিক্সড (টেস্টিংয়ের জন্য ওটিপি ছাড়া ডিরেক্ট অ্যাক্সেস মেকানিজম)
 const handleAuth = () => {
     const email = $('email').value, pass = $('password').value, status = $('auth-status');
     if (!email || !pass) return status.innerText = "Email and Password required!";
-    
     (isLoginMode ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass))
-        .then(() => { 
-            if($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'none'; 
-            if($('home-page')) $('home-page').style.display = 'flex'; 
+        .then((userCredential) => { 
+            const user = userCredential.user;
+            if(!isLoginMode) {
+                db.collection("users").doc(user.uid).set({
+                    email: user.email,
+                    username: user.email.split('@')[0],
+                    name: user.email.split('@')[0],
+                    displayName: user.email.split('@')[0],
+                    bio: "AI Sphere User",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            $('onboarding-wrapper').style.display = 'none'; 
+            $('home-page').style.display = 'flex'; 
             nav('home', true); 
         })
-        .catch(e => {
-            // টেস্ট মুড বাইপাস: ফায়ারবেস ফেইল করলেও যেন হোমপেজে নিয়ে যায়
-            console.log("Auth failed, bypassing for testing:", e.message);
-            if($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'none'; 
-            if($('home-page')) $('home-page').style.display = 'flex'; 
-            nav('home', true);
-        });
+        .catch(e => status.innerText = e.message);
 };
 
 const changePassword = () => {
@@ -127,87 +139,58 @@ const changePassword = () => {
 
 const handleLogout = () => auth.signOut().then(() => location.reload());
 
-// --- Profile Customization & Premium Modal Engine ---
+// --- Profile Customization ---
 const loadUserProfile = () => {
     const user = auth.currentUser; if (!user) return;
+    
     db.collection("users").doc(user.uid).onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            if (data.profilePic && $('my-profile-img')) $('my-profile-img').src = data.profilePic;
-            if (data.coverPic && $('my-cover-img')) $('my-cover-img').src = data.coverPic;
+            if (data.profilePic) $('my-profile-img').src = data.profilePic;
+            if (data.coverPic) $('my-cover-img').src = data.coverPic;
             
-            // নাম ও বায়ো রিয়েল-টাইম লোড
-            if ($('profile-name')) $('profile-name').innerText = data.displayName ? data.displayName.toUpperCase() : (data.username ? data.username.toUpperCase() : user.email.split('@')[0].toUpperCase());
-            if ($('profile-bio')) $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
-            
-            // লোকেশন ও ইন্টারেস্ট UI রিয়েল-টাইম লোড
-            if ($('profile-location')) $('profile-location').innerText = data.location || "লোকেশন সেট করা নেই";
-            if ($('profile-interests')) $('profile-interests').innerText = data.interests || "পছন্দের বিষয় যোগ করুন";
+            const currentName = data.displayName || data.name || data.username || user.email.split('@')[0];
+            $('profile-name').innerText = currentName.toUpperCase();
+            $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
         }
+    });
+
+    db.collection("users").doc(user.uid).collection("followers").onSnapshot(snap => {
+        if ($('follower-count')) $('follower-count').innerText = snap.size;
+    });
+
+    db.collection("users").doc(user.uid).collection("following").onSnapshot(snap => {
+        if ($('following-count')) $('following-count').innerText = snap.size;
     });
 };
 
-// প্রোফাইল এডিট সাদা মডাল ওপেন করার ফাংশন (জাম্পিং লকড)
-const editProfileDetails = (e) => {
-    if (e) { 
-        e.preventDefault(); 
-        e.stopPropagation(); 
+const editProfileDetails = () => {
+    if ($('edit-profile-modal') && $('edit-profile-overlay')) {
+        $('edit-profile-modal').style.display = 'block';
+        $('edit-profile-overlay').style.display = 'block';
+        if ($('profile-name-input')) $('profile-name-input').value = $('profile-name').innerText;
+        if ($('profile-bio-input')) $('profile-bio-input').value = $('profile-bio').innerText;
     }
-    
-    const user = auth.currentUser; if (!user) return;
-    
-    const modal = document.getElementById('edit-profile-modal');
-    const overlay = document.getElementById('edit-modal-overlay');
-    
-    if (modal && overlay) {
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-    } else {
-        console.error("Error: Modal or Overlay element not found in HTML!");
-    }
-
-    // ফায়ারবেস থেকে ডেটা এনে ইনপুট বক্সে বসানো
-    db.collection("users").doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (document.getElementById('edit-name-input')) document.getElementById('edit-name-input').value = data.displayName || "";
-            if (document.getElementById('edit-bio-input')) document.getElementById('edit-bio-input').value = data.bio || "";
-            if (document.getElementById('edit-location-input')) document.getElementById('edit-location-input').value = data.location || "";
-            if (document.getElementById('edit-interests-input')) document.getElementById('edit-interests-input').value = data.interests || "";
-        }
-    }).catch(err => console.error("Firebase fetch error:", err));
 };
 
-// মডাল বন্ধ করার ফাংশন (Fixed Missing Function)
-const closeEditModal = () => {
-    const modal = document.getElementById('edit-profile-modal');
-    const overlay = document.getElementById('edit-modal-overlay');
-    if (modal) modal.style.display = 'none';
-    if (overlay) overlay.style.display = 'none';
-};
-
-// ইনপুট বক্সের সমস্ত ডেটা একসাথে ফায়ারবেসে সেভ করার ফাংশন (Fixed Missing Function)
-const saveProfileDetails = () => {
+const saveProfileData = () => {
     const user = auth.currentUser; if (!user) return;
-    
-    const nameInput = document.getElementById('edit-name-input');
-    const bioInput = document.getElementById('edit-bio-input');
-    const locationInput = document.getElementById('edit-location-input');
-    const interestsInput = document.getElementById('edit-interests-input');
+    const newName = $('profile-name-input')?.value.trim();
+    const newBio = $('profile-bio-input')?.value.trim();
 
-    const updateData = {
-        displayName: nameInput ? nameInput.value.trim() : "",
-        bio: bioInput ? bioInput.value.trim() : "",
-        location: locationInput ? locationInput.value.trim() : "",
-        interests: interestsInput ? interestsInput.value.trim() : ""
-    };
+    if (!newName) return alert("সাকিব, নাম খালি রাখা যাবে না!");
 
-    db.collection("users").doc(user.uid).set(updateData, { merge: true })
-        .then(() => {
-            alert("প্রোফাইল সফলভাবে আপডেট হয়েছে! ");
-            closeEditModal();
-        })
-        .catch(e => alert("Error saving profile: " + e.message));
+    db.collection("users").doc(user.uid).update({
+        name: newName,
+        displayName: newName, 
+        bio: newBio
+    })
+    .then(() => {
+        alert("প্রোফাইল সফলভাবে আপডেট হয়েছে!");
+        $('edit-profile-modal').style.display = 'none';
+        $('edit-profile-overlay').style.display = 'none';
+    })
+    .catch(e => alert("সেভ করতে সমস্যা হয়েছে: " + e.message));
 };
 
 async function updateProfileMedia(type) {
@@ -221,7 +204,7 @@ async function updateProfileMedia(type) {
     }
 }
 
-// --- Post & Like Features (Optimized) ---
+// --- Post & Like Features ---
 const handlePostSubmit = async () => {
     const content = $('post-input').value, file = $('post-image-input')?.files[0];
     if (!content.trim() && !file) return;
@@ -264,7 +247,7 @@ const createPostHTML = (id, data) => {
             <div id="inline-comments-list-${id}" style="max-height:200px; overflow-y:auto; margin-bottom:12px;"></div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <input type="text" id="inline-input-${id}" placeholder="একটি মন্তব্য লিখুন..." style="flex:1; background:rgba(0,0,0,0.03); border:1px solid var(--border-color); color:var(--text-color); padding:8px 14px; border-radius:20px; outline:none; font-size:13px;">
-                <button onclick="handleCommentSubmitData('${id}', false)" style="background:var(--accent); color:#000; border:none; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;"><i class="fas fa-paper-plane" style="font-size:12px;"></i></button>
+                <button onclick="handleCommentSubmitData('${id}', false)" style="background:var(--accent); color:#000; border:none; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="fas fa-paper-plane" style="font-size:12px;"></i></button>
             </div>
         </div>
     </div>`;
@@ -378,4 +361,82 @@ const loadReels = () => {
             });
         }
     });
+};
+
+// --- Real-Time Friends & Follow Engine ---
+const loadUsersForFollow = () => {
+    const container = $('user-list-container'); if (!container) return;
+    const currentUser = auth.currentUser; if (!currentUser) return;
+
+    container.innerHTML = `<p style="text-align:center; opacity:0.6; font-size:13px; margin-top:20px;">ইউজার লিস্ট লোড হচ্ছে...</p>`;
+
+    db.collection("users").doc(currentUser.uid).collection("following").onSnapshot(followingSnap => {
+        const followingList = followingSnap.docs.map(doc => doc.id);
+
+        db.collection("users").onSnapshot(snapshot => {
+            container.innerHTML = "";
+            if (snapshot.empty) {
+                container.innerHTML = `<p style="text-align:center; opacity:0.5; font-size:12px;">কোনো ইউজার খুঁজে পাওয়া যায়নি।</p>`;
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const userId = doc.id;
+                const userData = doc.data();
+
+                if (userId === currentUser.uid) return; 
+
+                const userName = userData.displayName || userData.name || userData.username || userData.email?.split('@')[0] || "AI User";
+                const userBio = userData.bio || "AI Sphere User";
+                const userUID = userData.username || "user";
+                const isFollowing = followingList.includes(userId);
+                
+                const btnText = isFollowing ? "Following" : "Follow";
+                const btnClass = isFollowing ? "follow-btn following" : "follow-btn";
+                const firstLetter = userName.charAt(0).toUpperCase();
+                const userAvatar = userData.profilePic ? `<img src="${userData.profilePic}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : firstLetter;
+
+                container.innerHTML += `
+                <div class="user-card" style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; overflow:hidden;">${userAvatar}</div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; color: var(--text-color);">${userName.toUpperCase()}</h4>
+                            <p style="margin: 0; font-size: 11px; opacity: 0.6; margin-bottom: 2px;">@${userUID.toLowerCase()}</p>
+                            <p style="margin: 0; font-size: 11px; color: var(--text-color); opacity: 0.5; font-style: italic;">${userBio}</p>
+                        </div>
+                    </div>
+                    <button class="${btnClass}" data-user-id="${userId}" onclick="handleFollowToggle(this)" style="background: var(--accent); color: black; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 12px;">${btnText}</button>
+                </div>`;
+            });
+            
+            if(container.innerHTML === "") {
+                container.innerHTML = `<p style="text-align:center; opacity:0.5; font-size:12px;">তুমি ছাড়া আর কোনো ইউজার নেই।</p>`;
+            }
+        });
+    }, err => {
+        console.error(err);
+        container.innerHTML = `<p style="text-align:center; color:#ff4444; font-size:12px;">ইউজার লোড করতে সমস্যা হয়েছে।</p>`;
+    });
+};
+
+const handleFollowToggle = (btn) => {
+    const targetUserId = btn.getAttribute('data-user-id'); 
+    const currentUser = auth.currentUser; 
+    if (!currentUser || !targetUserId) return;
+
+    const isFollowing = btn.classList.contains('following');
+    const myFollowingRef = db.collection("users").doc(currentUser.uid).collection("following").doc(targetUserId);
+    const targetFollowersRef = db.collection("users").doc(targetUserId).collection("followers").doc(currentUser.uid);
+
+    if (isFollowing) {
+        Promise.all([myFollowingRef.delete(), targetFollowersRef.delete()])
+        .then(() => { btn.classList.remove('following'); btn.innerText = "Follow"; })
+        .catch(e => console.error("Unfollow Error:", e));
+    } else {
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        Promise.all([myFollowingRef.set({ timestamp: timestamp }), targetFollowersRef.set({ timestamp: timestamp })])
+        .then(() => { btn.classList.add('following'); btn.innerText = "Following"; })
+        .catch(e => console.error("Follow Error:", e));
+    }
 };
