@@ -30,7 +30,7 @@ body {
 }
 
 /* --- FULL SCREEN PAGES --- */
-#reels-section, #friends-section, #stats-section, #messages-section, #profile-page, #global-feed-section, #about-page, #privacy-page, #settings-page {
+#friends-section, #stats-section, #messages-section, #profile-page, #global-feed-section, #about-page, #privacy-page, #settings-page {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100vh;
     background: var(--bg-dark);
@@ -38,6 +38,27 @@ body {
     overflow-y: auto;
     display: none;
     transition: background 0.3s;
+}
+
+/* ─── রিলস সেকশন ফিক্স (কোনো সাদা জায়গা থাকবে না) ─── */
+#reels-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    background: #000000 !important;
+    z-index: 5000;
+    overflow-y: scroll !important;
+    scroll-snap-type: y mandatory;
+    display: none;
+    scrollbar-width: none; 
+    margin: 0;
+    padding: 0;
+}
+#reels-section::-webkit-scrollbar {
+    display: none; 
 }
 
 /* --- EARTH BUTTON INTERACTION --- */
@@ -101,14 +122,14 @@ body {
     padding-right: 16px;
 }
 
-/* ─── POST ACTIONS (বাটনগুলো ফেসবুকের মতো একটু ভেতরে আনা হলো) ─── */
+/* ─── POST ACTIONS ─── */
 .post-actions {
     display: flex;
     justify-content: space-between;
     padding-top: 12px;
     padding-bottom: 4px;      
-    padding-left: 24px;       /*  লাইক বাটনটিকে কোণা থেকে ভেতরে আনার জন্য */
-    padding-right: 24px;      /*  শেয়ার বাটনটিকে কোণা থেকে ভেতরে আনার জন্য */
+    padding-left: 24px;       
+    padding-right: 24px;      
     border-top: 1px solid var(--border-color);
 }
 
@@ -145,7 +166,7 @@ body {
     margin: 10px 0;
 }
 
-/* ─── লাইক, কমেন্ট, শেয়ার বাটনগুলো বড় করা হলো ─── */
+/* ─── লাইক, কমেন্ট, শেয়ার বাটন ─── */
 .action-btn {
     flex: 1;
     display: flex;
@@ -160,7 +181,6 @@ body {
     border-radius: 8px;
 }
 
-/* বাটনগুলোর আইকন বড় করার জন্য */
 .action-btn i {
     font-size: 20px;         
 }
@@ -320,29 +340,28 @@ input:checked + .slider:before {
 #settings-page div, #about-page div, #privacy-page div {
     color: var(--text-color);
 }
-/* Reels Container Styling */
-#reels-section {
-    scrollbar-width: none; 
-}
-#reels-section::-webkit-scrollbar {
-    display: none; 
-}
 
-/* Single Reel Card */
+/* ─── নিখুঁত রিলস কার্ড ডিজাইন (ফুল-স্ক্রিন লক) ─── */
 .reel-card {
-    width: 100%;
-    height: 100vh;              
-    height: 100dvh;             
+    width: 100% !important;
+    height: 100vh !important;              
+    height: 100dvh !important;             
     scroll-snap-align: start;
     position: relative;
-    background: #000; 
+    background: #000000 !important; 
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 .reel-video {
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: cover; 
     display: block;             
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 /* Reels Info (User & Text) */
@@ -363,6 +382,7 @@ input:checked + .slider:before {
     gap: 20px;
     align-items: center;
     color: white;
+    z-index: 10;
 }
 
 /* ─── গ্লোবাল ফিডের মূল কন্টেইনারের প্যাডিং রিমুভ ─── */
@@ -386,8 +406,9 @@ input:checked + .slider:before {
     margin: 12px 0 !important;
     border-radius: 0 !important;  
 }
+
 /* বাটনের ওপর মাউস বা টাচ রাখলে হালকা ব্যাকগ্রাউন্ড হবে */
 .action-btn:hover {
     background: rgba(255, 255, 255, 0.05) !important;
-    color: #00e5ff !important; /* তোমার অ্যাপের থিম কালার অনুযায়ী টেক্সট লাইট নীল হবে */
+    color: #00e5ff !important; 
 }
