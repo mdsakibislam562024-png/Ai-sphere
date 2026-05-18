@@ -8,12 +8,17 @@ const firebaseConfig = {
     appId: "1:287882935194:web:2401447236fb80b26f5823"
 };
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), db = firebase.firestore();
+// Firebase v8/v9 Compatibility Check
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const auth = (typeof firebase !== 'undefined') ? firebase.auth() : null;
+const db = (typeof firebase !== 'undefined') ? firebase.firestore() : null;
 const cloudName = "ddcdcbepv", uploadPreset = "aisphere_preset"; 
 
 let isLoginMode = true, currentPage = 'home', globalPostsCache = [];
-let isAppUnmuted = false; // গ্লোবাল ভ্যারিয়েবল: শুরুতে রিলস মিউট থাকবে, প্রথম ক্লিকে আনমিউট হবে
+let isAppUnmuted = false; 
 const $ = id => document.getElementById(id);
 const activeListeners = {}; 
 
@@ -47,9 +52,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if ($('darkModeCheckbox')) $('darkModeCheckbox').checked = isDark;
     document.body.classList.toggle('light-mode', !isDark);
     
-    auth.onAuthStateChanged(user => {
-        if (user && currentPage === 'friends') loadUsersForFollow();
-    });
+    // Auth State Listener to manage Screens
+    if (auth) {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                if ($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'none';
+                if ($('home-page')) $('home-page').style.display = 'flex';
+                if (currentPage === 'friends') loadUsersForFollow();
+                nav('home', false);
+            } else {
+                if ($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'flex';
+                if ($('home-page')) $('home-page').style.display = 'none';
+            }
+        });
+    } else {
+        // Fallback for testing when Firebase is failing
+        console.warn("Firebase Not Loaded. Showing Main Feed for UI Test.");
+        if ($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'none';
+        if ($('home-page')) $('home-page').style.display = 'flex';
+    }
 });
 
 const toggleDarkMode = () => {
@@ -61,7 +82,7 @@ const toggleDarkMode = () => {
 // --- Navigation & Routing ---
 const toggleSidebar = (pushHistory = true) => {
     const active = $('sidebar').classList.toggle('active');
-    $('overlay').style.display = active ? 'block' : 'none';
+    if ($('overlay')) $('overlay').style.display = active ? 'block' : 'none';
 
     if (active && pushHistory) {
         history.pushState({ page: 'sidebar' }, "", "#sidebar");
@@ -75,7 +96,7 @@ window.onpopstate = (e) => {
     if (target === 'sidebar') {
         if (sidebarPages.includes(currentPage)) {
             sections.forEach(s => $(s) && ($(s).style.display = 'none'));
-            $('hero-section').style.display = 'flex';
+            if ($('hero-section')) $('hero-section').style.display = 'flex';
             currentPage = 'home';
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             $('tab-home')?.classList.add('active');
@@ -104,7 +125,7 @@ function nav(page, addHistory = true, targetUserId = null, targetAuthor = null) 
     sections.forEach(s => $(s) && ($(s).style.display = 'none'));
     
     if (page === 'home') {
-        $('hero-section').style.display = 'flex';
+        if ($('hero-section')) $('hero-section').style.display = 'flex';
     } else {
         let target = page + '-page';
         if (page === 'profile') target = 'profile-page';
@@ -161,14 +182,16 @@ const openDashboard = () => sidebarNav('dashboard'),
 // --- Authentication Engine ---
 const toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
-    $('auth-title').innerText = isLoginMode ? "AI SPHERE" : "SIGN UP";
-    $('authBtn').innerText = isLoginMode ? "Login" : "Register";
-    $('auth-switch').innerText = isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login";
+    if ($('auth-title')) $('auth-title').innerText = isLoginMode ? "AI SPHERE" : "SIGN UP";
+    if ($('authBtn')) $('authBtn').innerText = isLoginMode ? "Login" : "Register";
+    if ($('auth-switch')) $('auth-switch').innerText = isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login";
 };
 
 const handleAuth = () => {
     const email = $('email').value, pass = $('password').value, status = $('auth-status');
     if (!email || !pass) return status.innerText = "Email and Password required!";
+    if (!auth || !db) return alert("Firebase missing!");
+
     (isLoginMode ? auth.signInWithEmailAndPassword(email, pass) : auth.createUserWithEmailAndPassword(email, pass))
         .then((userCredential) => { 
             const user = userCredential.user;
@@ -190,16 +213,17 @@ const handleAuth = () => {
 };
 
 const changePassword = () => {
+    if(!auth.currentUser) return;
     const newPass = prompt("সাকিব, তোমার নতুন পাসওয়ার্ডটি এখানে দাও:");
     if (newPass && newPass.length >= 6) auth.currentUser.updatePassword(newPass).then(() => alert("সফল!")).catch(e => alert(e.message));
 };
 
-const handleLogout = () => auth.signOut().then(() => location.reload());
+const handleLogout = () => auth ? auth.signOut().then(() => location.reload()) : location.reload();
 
 // --- Profile Customization ---
 const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
+    if (!auth || !auth.currentUser) return;
     const user = auth.currentUser; 
-    if (!user) return;
 
     const myUid = user.uid;
     const myUsername = user.email.split('@')[0].toLowerCase();
@@ -217,12 +241,12 @@ const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
         window.activeProfileListener = db.collection("users").doc(myUid).onSnapshot(doc => {
             if (doc.exists) {
                 const data = doc.data();
-                if (data.profilePic) $('my-profile-img').src = data.profilePic;
-                if (data.coverPic) $('my-cover-img').src = data.coverPic;
+                if (data.profilePic && $('my-profile-img')) $('my-profile-img').src = data.profilePic;
+                if (data.coverPic && $('my-cover-img')) $('my-cover-img').src = data.coverPic;
                 
                 const currentName = data.displayName || data.name || data.username || myUsername;
-                $('profile-name').innerText = currentName.toUpperCase();
-                $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
+                if ($('profile-name')) $('profile-name').innerText = currentName.toUpperCase();
+                if ($('profile-bio')) $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
             }
         });
 
@@ -239,10 +263,10 @@ const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
         if(editBtn) editBtn.style.display = "none";
 
         let cleanName = targetAuthor ? targetAuthor.replace('@', '') : "User";
-        $('profile-name').innerText = cleanName.toUpperCase();
-        $('profile-bio').innerText = "AI Sphere Member";
-        $('my-profile-img').src = "https://i.pravatar.cc/100?u=" + cleanName;
-        $('my-cover-img').src = "https://via.placeholder.com/600x200?text=AI+Sphere+Cover"; 
+        if ($('profile-name')) $('profile-name').innerText = cleanName.toUpperCase();
+        if ($('profile-bio')) $('profile-bio').innerText = "AI Sphere Member";
+        if ($('my-profile-img')) $('my-profile-img').src = "https://i.pravatar.cc/100?u=" + cleanName;
+        if ($('my-cover-img')) $('my-cover-img').src = "https://via.placeholder.com/600x200?text=AI+Sphere+Cover"; 
 
         if (targetUserId && targetUserId !== 'undefined' && targetUserId !== '') {
             window.activeProfileListener = db.collection("users").doc(targetUserId).onSnapshot(doc => {
@@ -251,7 +275,7 @@ const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
                     if ($('profile-bio')) $('profile-bio').innerText = data.bio || "No bio available.";
                     if ($('my-profile-img') && data.profilePic) $('my-profile-img').src = data.profilePic;
                     if ($('my-cover-img') && data.coverPic) $('my-cover-img').src = data.coverPic;
-                    if (data.displayName || data.name) $('profile-name').innerText = (data.displayName || data.name).toUpperCase();
+                    if ($('profile-name') && (data.displayName || data.name)) $('profile-name').innerText = (data.displayName || data.name).toUpperCase();
                 }
             });
 
@@ -270,13 +294,14 @@ const editProfileDetails = () => {
     if ($('edit-profile-modal') && $('edit-profile-overlay')) {
         $('edit-profile-modal').style.display = 'block';
         $('edit-profile-overlay').style.display = 'block';
-        if ($('profile-name-input')) $('profile-name-input').value = $('profile-name').innerText;
-        if ($('profile-bio-input')) $('profile-bio-input').value = $('profile-bio').innerText;
+        if ($('profile-name-input')) $('profile-name-input').value = $('profile-name') ? $('profile-name').innerText : "";
+        if ($('profile-bio-input')) $('profile-bio-input').value = $('profile-bio') ? $('profile-bio').innerText : "";
     }
 };
 
 const saveProfileData = () => {
-    const user = auth.currentUser; if (!user) return;
+    if(!auth || !auth.currentUser) return;
+    const user = auth.currentUser;
     const newName = $('profile-name-input')?.value.trim();
     const newBio = $('profile-bio-input')?.value.trim();
 
@@ -296,54 +321,55 @@ const saveProfileData = () => {
 };
 
 async function updateProfileMedia(type) {
+    if(!auth || !auth.currentUser) return;
     const file = $(type === 'profile' ? 'profile-upload' : 'cover-upload').files[0], user = auth.currentUser;
     if (!file || !user) return;
     const url = await uploadToCloudinary(file);
     if (url) {
         db.collection("users").doc(user.uid).set({ [type + "Pic"]: url, email: user.email, username: user.email.split('@')[0] }, { merge: true })
-            .then(() => { $(type === 'profile' ? 'my-profile-img' : 'my-cover-img').src = url; alert(`Success: ${type} updated!`); })
+            .then(() => { if ($(type === 'profile' ? 'my-profile-img' : 'my-cover-img')) $(type === 'profile' ? 'my-profile-img' : 'my-cover-img').src = url; alert(`Success: ${type} updated!`); })
             .catch(e => alert("Firestore Error: " + e.message));
     }
 }
 
 // --- ক্রিয়েট পোস্ট মডাল কন্ট্রোলারস ---
 const openPostModal = () => {
-    $('post-popup-overlay').style.display = 'block';
-    $('post-popup-modal').style.display = 'block';
-    $('modal-post-title').value = "";
-    $('modal-post-input').value = "";
-    $('modal-post-tags').value = "";
-    $('modal-media-preview').style.display = 'none';
-    $('modal-media-preview').innerHTML = "";
-    $('post-media-trigger').value = ""; 
+    if($('post-popup-overlay')) $('post-popup-overlay').style.display = 'block';
+    if($('post-popup-modal')) $('post-popup-modal').style.display = 'block';
+    if($('modal-post-title')) $('modal-post-title').value = "";
+    if($('modal-post-input')) $('modal-post-input').value = "";
+    if($('modal-post-tags')) $('modal-post-tags').value = "";
+    if($('modal-media-preview')) { $('modal-media-preview').style.display = 'none'; $('modal-media-preview').innerHTML = ""; }
+    if($('post-media-trigger')) $('post-media-trigger').value = ""; 
 };
 
 const closePostModal = () => {
-    $('post-popup-overlay').style.display = 'none';
-    $('post-popup-modal').style.display = 'none';
+    if($('post-popup-overlay')) $('post-popup-overlay').style.display = 'none';
+    if($('post-popup-modal')) $('post-popup-modal').style.display = 'none';
 };
 
 const handleMediaSelection = (input) => {
     const file = input.files[0];
     if (!file) return;
 
-    $('post-popup-overlay').style.display = 'block';
-    $('post-popup-modal').style.display = 'block';
+    if($('post-popup-overlay')) $('post-popup-overlay').style.display = 'block';
+    if($('post-popup-modal')) $('post-popup-modal').style.display = 'block';
 
     const previewContainer = $('modal-media-preview');
-    previewContainer.innerHTML = "";
-    previewContainer.style.display = 'block';
+    if(previewContainer) {
+        previewContainer.innerHTML = "";
+        previewContainer.style.display = 'block';
 
-    const fileURL = URL.createObjectURL(file);
+        const fileURL = URL.createObjectURL(file);
 
-    if (file.type.startsWith('video/')) {
-        previewContainer.innerHTML = `<video src="${fileURL}" controls style="width:100%; max-height:220px; object-fit:cover;"></video>`;
-    } else {
-        previewContainer.innerHTML = `<img src="${fileURL}" style="width:100%; max-height:220px; object-fit:cover;">`;
+        if (file.type.startsWith('video/')) {
+            previewContainer.innerHTML = `<video src="${fileURL}" controls style="width:100%; max-height:220px; object-fit:cover;"></video>`;
+        } else {
+            previewContainer.innerHTML = `<img src="${fileURL}" style="width:100%; max-height:220px; object-fit:cover;">`;
+        }
     }
 };
 
-// --- নতুন নিয়মে UID সহ পোস্ট সাবমিট ---
 const handleModalPostSubmit = async () => {
     const title = $('modal-post-title').value.trim();
     const content = $('modal-post-input').value.trim();
@@ -353,8 +379,10 @@ const handleModalPostSubmit = async () => {
 
     if (!content && !title && !file) return alert("সাকিব, খালি পোস্ট করা যাবে না!");
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> আপলোড হচ্ছে...`;
+    if(submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> আপলোড হচ্ছে...`;
+    }
 
     const url = file ? await uploadToCloudinary(file) : null;
 
@@ -363,31 +391,35 @@ const handleModalPostSubmit = async () => {
     fullText += content;
     if (tags) fullText += `\n\n${tags}`;
 
-    const currentUid = auth.currentUser ? auth.currentUser.uid : '';
+    const currentUid = (auth && auth.currentUser) ? auth.currentUser.uid : '';
 
-    db.collection("posts").add({
-        text: fullText,
-        image: url,
-        author: auth.currentUser?.email.split('@')[0] || 'SAKIB',
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        likes: 0,
-        userId: currentUid, 
-        uid: currentUid 
-    })
-    .then(() => {
-        alert("পোস্টটি সফলভাবে গ্লোবাল ফিডে লাইভ হয়েছে!");
-        closePostModal();
-    })
-    .catch(e => alert("Post Error: " + e.message))
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> পোস্ট করুন`;
-    });
+    if(db) {
+        db.collection("posts").add({
+            text: fullText,
+            image: url,
+            author: (auth && auth.currentUser) ? auth.currentUser.email.split('@')[0] : 'SAKIB',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            likes: 0,
+            userId: currentUid, 
+            uid: currentUid 
+        })
+        .then(() => {
+            alert("পোস্টটি সফলভাবে গ্লোবাল ফিডে লাইভ হয়েছে!");
+            closePostModal();
+        })
+        .catch(e => alert("Post Error: " + e.message))
+        .finally(() => {
+            if(submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> পোস্ট করুন`;
+            }
+        });
+    }
 };
 
-// --- Real-time Like Handler ---
 window.handleLike = (event, postId) => {
     if(event) event.stopPropagation(); 
+    if(!db) return;
     const postRef = db.collection("posts").doc(postId);
     
     db.runTransaction((transaction) => {
@@ -400,7 +432,6 @@ window.handleLike = (event, postId) => {
     .catch((err) => console.error("Like Error: ", err));
 };
 
-// --- Feed UI Template Generator ---
 const createPostHTML = (id, data) => {
     let media = "";
     if (data.image) {
@@ -415,7 +446,7 @@ const createPostHTML = (id, data) => {
     <div class="post-card" id="post-card-${id}" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; margin-bottom: 20px;">
         <div class="post-header" style="margin-bottom: 12px;">
             <div class="post-info-meta">
-                <strong class="post-user-name" onclick="window.openUserProfile('${postUserId}', '${postAuthor}')" style="color: var(--accent); font-size: 15px; cursor: pointer; display: inline-block; user-select: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">@${postAuthor}</strong>
+                <strong class="post-user-name" onclick="window.openUserProfile('${postUserId}', '${postAuthor}')" style="color: var(--accent); font-size: 15px; cursor: pointer; display: inline-block; user-select: none;">@${postAuthor}</strong>
                 <span class="post-time" style="font-size: 12px; opacity: 0.5; margin-left: 10px;"><i class="far fa-clock" style="margin-right:3px;"></i>${formatTimeAgo(data.timestamp)}</span>
             </div>
         </div>
@@ -432,13 +463,13 @@ const createPostHTML = (id, data) => {
         </div>
 
         <div class="post-actions-wrapper" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; margin-top: 5px;">
-            <button class="action-btn" onclick="window.handleLike(event, '${id}')" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+            <button class="action-btn" onclick="window.handleLike(event, '${id}')" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px;">
                 <i class="far fa-thumbs-up" style="font-size: 16px;"></i> লাইক
             </button>
-            <button class="action-btn" onclick="toggleInlineCommentBox('${id}', false)" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+            <button class="action-btn" onclick="toggleInlineCommentBox('${id}', false)" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px;">
                 <i class="far fa-comment" style="font-size: 16px;"></i> কমেন্ট
             </button>
-            <button class="action-btn" onclick="handleShare()" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+            <button class="action-btn" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px;">
                 <i class="fas fa-share" style="font-size: 15px;"></i> শেয়ার
             </button>
         </div>
@@ -453,8 +484,8 @@ const createPostHTML = (id, data) => {
     </div>`;
 };
 
-// --- Live Feed & My Posts Feed Controllers ---
 const loadPosts = () => {
+    if(!db) return;
     db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snap => {
         const area = $('post-display-area'); if (!area) return;
         if (globalPostsCache.length === 0 || snap.docChanges().length > 1) {
@@ -475,7 +506,8 @@ const loadPosts = () => {
 };
 
 const loadMyPosts = (targetUserId = null) => {
-    const user = auth.currentUser; if (!user) return;
+    if(!auth || !auth.currentUser) return;
+    const user = auth.currentUser;
     
     let searchId = user.email.split('@')[0];
     if (targetUserId && targetUserId !== user.uid) {
@@ -491,6 +523,7 @@ const loadMyPosts = (targetUserId = null) => {
 };
 
 function fetchMyPostsFromFirestore(authorName) {
+    if(!db) return;
     db.collection("posts").where("author", "==", authorName).get().then(snap => {
         if ($('user-posts-area')) {
             $('user-posts-area').innerHTML = snap.empty ? `<p style="text-align:center; opacity:0.5; padding:20px;">কোনো পোস্ট পাওয়া যায়নি</p>` : "";
@@ -499,7 +532,6 @@ function fetchMyPostsFromFirestore(authorName) {
     });
 }
 
-// --- Real-time Comments Engine ---
 const toggleInlineCommentBox = (postId, isReel = false) => {
     const box = $(isReel ? `reel-comment-box-${postId}` : `inline-comment-box-${postId}`); if (!box) return;
     const isOpen = box.dataset.opened === "true";
@@ -515,12 +547,13 @@ const toggleInlineCommentBox = (postId, isReel = false) => {
 
 const handleCommentSubmitData = async (postId, isReel = false) => {
     const input = $(isReel ? `reel-input-${postId}` : `inline-input-${postId}`), text = input.value.trim();
-    if (!text) return;
-    db.collection("posts").doc(postId).collection("comments").add({ text, author: auth.currentUser ? auth.currentUser.email.split('@')[0] : 'SAKIB', timestamp: firebase.firestore.FieldValue.serverTimestamp() })
+    if (!text || !db) return;
+    db.collection("posts").doc(postId).collection("comments").add({ text, author: (auth && auth.currentUser) ? auth.currentUser.email.split('@')[0] : 'SAKIB', timestamp: firebase.firestore.FieldValue.serverTimestamp() })
         .then(() => input.value = "").catch(e => console.error(e));
 };
 
 const loadLiveCommentsData = (postId, isReel = false) => {
+    if(!db) return;
     if (activeListeners[postId]) activeListeners[postId]();
     activeListeners[postId] = db.collection("posts").doc(postId).collection("comments").orderBy("timestamp", "asc")
         .onSnapshot(snap => {
@@ -535,14 +568,15 @@ const loadLiveCommentsData = (postId, isReel = false) => {
 };
 
 const loadCommentsCount = (id) => {
+    if(!db) return;
     db.collection("posts").doc(id).collection("comments").onSnapshot(snap => {
         if ($(`comment-count-${id}`)) $(`comment-count-${id}`).innerText = snap.size;
         if ($(`reel-comment-count-${id}`)) $(`reel-comment-count-${id}`).innerText = snap.size;
     });
 };
 
-// --- Premium Reels Engine ---
 const loadReels = () => {
+    if(!db) return;
     db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         const area = $('reels-section'); if (!area) return;
         
@@ -569,13 +603,7 @@ const loadReels = () => {
                             <div style="position:absolute; right:20px; bottom:50px; display:flex; flex-direction:column; gap:22px; color:#fff; z-index:10; text-align:center; background:rgba(0,0,0,0.4); padding:18px 12px; border-radius:30px; backdrop-filter:blur(5px);">
                                 <button onclick="window.handleLike(event, '${doc.id}')" style="background:transparent; border:none; outline:none; cursor:pointer; color:#fff;"><i class="fas fa-heart" style="color:#ff4444; font-size:26px;"></i><div id="reel-like-count-${doc.id}" style="font-weight:bold; font-size:12px; margin-top:4px;">${d.likes || 0}</div></button>
                                 <div onclick="toggleInlineCommentBox('${doc.id}', true)" style="cursor:pointer;"><i class="fas fa-comment" style="color:#fff; font-size:26px;"></i><div id="reel-comment-count-${doc.id}" style="font-weight:bold; font-size:12px; margin-top:4px;">0</div></div>
-                                <div onclick="handleShare()" style="cursor:pointer;"><i class="fas fa-share" style="color:#fff; font-size:26px;"></i><div style="font-weight:bold; font-size:11px; margin-top:4px;">Share</div></div>
                             </div>
-                        </div>
-                        <div id="reel-comment-box-${doc.id}" data-opened="false" style="display:none; position:absolute; bottom:0; left:0; width:100%; height:50%; background:rgba(13,13,13,0.95); backdrop-filter:blur(20px); border-top:1px solid rgba(255,255,255,0.15); border-radius:20px 20px 0 0; z-index:99; flex-direction:column; transform:translateY(100%); transition:transform 0.3s ease-out; padding:12px 15px; box-sizing:border-box;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1);"><span style="color:#fff; font-size:13px; font-weight:600;">Comments</span><i class="fas fa-chevron-down" onclick="toggleInlineCommentBox('${doc.id}', true)" style="cursor:pointer; color:rgba(255,255,255,0.6); font-size:14px; padding:4px;"></i></div>
-                            <div id="reel-comments-list-${doc.id}" style="flex:1; overflow-y:auto; margin:10px 0;"></div>
-                            <div style="display:flex; gap:8px; align-items:center; background:#000; padding:6px 12px; border-radius:25px; border:1px solid rgba(255,255,255,0.15);"><input type="text" id="reel-input-${doc.id}" placeholder="মন্তব্য লিখুন..." style="flex:1; background:transparent; border:none; color:#fff; outline:none; font-size:13px;"><button onclick="handleCommentSubmitData('${doc.id}', true)" style="background:#00e5ff; color:#000; border:none; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="fas fa-paper-plane" style="font-size:11px;"></i></button></div>
                         </div>
                     </div>`;
                     loadCommentsCount(doc.id);
@@ -587,18 +615,13 @@ const loadReels = () => {
     });
 };
 
-// প্রিমিয়াম রিলস ক্লিক হ্যান্ডেলার (প্রথম ক্লিকে গ্লোবাল সাউন্ড আনমিউট করবে)
 window.handleReelClick = function(videoElement) {
     if (!isAppUnmuted) {
         isAppUnmuted = true;
         videoElement.muted = false;
-        console.log("Premium Mode Enabled: All coming reels will play with audio.");
     } else {
-        if (videoElement.paused) {
-            videoElement.play();
-        } else {
-            videoElement.pause();
-        }
+        if (videoElement.paused) videoElement.play();
+        else videoElement.pause();
     }
 };
 
@@ -616,12 +639,7 @@ function initReelsObserver() {
             
             if (entry.isIntersecting) {
                 if (video) {
-                    // যদি ইউজার আগে কোনো রিলসে ক্লিক করে থাকে, তবে এটি আনমিউটড অবস্থায় চলবে
-                    if (isAppUnmuted) {
-                        video.muted = false;
-                    } else {
-                        video.muted = true;
-                    }
+                    video.muted = !isAppUnmuted;
                     video.play().catch(e => console.log("Auto-play blocked"));
                 }
                 trackUniqueReelView(reelId, creatorId);
@@ -634,7 +652,8 @@ function initReelsObserver() {
 }
 
 function trackUniqueReelView(reelDocId, creatorId) {
-    const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+    if(!auth || !auth.currentUser || !db) return;
+    const currentUserId = auth.currentUser.uid;
     if (!currentUserId || !creatorId || currentUserId === creatorId) return;
 
     const todayStr = new Date().toISOString().split('T')[0]; 
@@ -652,10 +671,10 @@ function trackUniqueReelView(reelDocId, creatorId) {
         if (!viewedUsers.includes(currentUserId)) {
             db.collection("users").doc(creatorId).update({
                 [`analytics.${todayStr}.views`]: firebase.firestore.FieldValue.increment(1)
-            }).catch(e => console.log("Analytics field generating..."));
+            }).catch(e => console.log("Generating analytics field..."));
 
             reelRef.update({
-                viewed_users: firebase.FieldValue.arrayUnion(currentUserId)
+                viewed_users: firebase.firestore.FieldValue.arrayUnion(currentUserId)
             });
         }
 
@@ -680,10 +699,10 @@ function trackUniqueReelView(reelDocId, creatorId) {
     }).catch(error => console.error("Tracking Engine Error:", error));
 }
 
-// --- Real-Time Friends & Follow Engine ---
 const loadUsersForFollow = () => {
     const container = $('user-list-container'); if (!container) return;
-    const currentUser = auth.currentUser; if (!currentUser) return;
+    if(!auth || !auth.currentUser || !db) return;
+    const currentUser = auth.currentUser;
 
     container.innerHTML = `<p style="text-align:center; opacity:0.6; font-size:13px; margin-top:20px;">ইউজার লিস্ট লোড হচ্ছে...</p>`;
 
@@ -726,18 +745,14 @@ const loadUsersForFollow = () => {
                     <button class="${btnClass}" data-user-id="${userId}" onclick="handleFollowToggle(this)" style="background: var(--accent); color: black; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 12px;">${btnText}</button>
                 </div>`;
             });
-            
-            if(container.innerHTML === "") {
-                container.innerHTML = `<p style="text-align:center; opacity:0.5; font-size:12px;">তুমি ছাড়া আর কোনো ইউজার নেই।</p>`;
-            }
         });
     }, err => {
-        console.error(err);
         container.innerHTML = `<p style="text-align:center; color:#ff4444; font-size:12px;">ইউজার লোড করতে সমস্যা হয়েছে।</p>`;
     });
 };
 
 const handleFollowToggle = (btn) => {
+    if(!auth || !auth.currentUser || !db) return;
     const targetUserId = btn.getAttribute('data-user-id'); 
     const currentUser = auth.currentUser; 
     if (!currentUser || !targetUserId) return;
@@ -747,88 +762,69 @@ const handleFollowToggle = (btn) => {
     const targetFollowersRef = db.collection("users").doc(targetUserId).collection("followers").doc(currentUser.uid);
 
     if (isFollowing) {
-        Promise.all([myFollowingRef.delete(), targetFollowersRef.delete()])
-        .catch(e => console.error("Unfollow Error:", e));
+        Promise.all([myFollowingRef.delete(), targetFollowersRef.delete()]).catch(e => console.error("Unfollow Error:", e));
     } else {
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        Promise.all([myFollowingRef.set({ timestamp: timestamp }), targetFollowersRef.set({ timestamp: timestamp })])
-        .catch(e => console.error("Follow Error:", e));
+        Promise.all([myFollowingRef.set({ timestamp: timestamp }), targetFollowersRef.set({ timestamp: timestamp })]).catch(e => console.error("Follow Error:", e));
     }
 };
 
-// --- Real-Time Dashboard Analytics Engine ---
 let dashboardListener = null;
-
 const loadDashboardAnalytics = () => {
+    if(!auth || !auth.currentUser || !db) return;
     const user = auth.currentUser;
-    if (!user) return;
 
     if (dashboardListener) dashboardListener();
 
     dashboardListener = db.collection("users").doc(user.uid).onSnapshot(userDoc => {
         let totalViews = 0;
-        
         if (userDoc.exists) {
             const userData = userDoc.data();
             const analytics = userData.analytics || {};
-            
-            for (let date in analytics) {
-                totalViews += (analytics[date].views || 0);
-            }
+            for (let date in analytics) { totalViews += (analytics[date].views || 0); }
         }
-        
         if ($('total-views-count')) $('total-views-count').innerText = totalViews;
 
         db.collection("posts").where("author", "==", user.email.split('@')[0]).get().then(snapshot => {
             let totalPosts = snapshot.size;
             let totalLikes = 0;
             let postIds = [];
-
             snapshot.forEach(doc => {
                 const data = doc.data();
                 totalLikes += (data.likes || 0);
                 postIds.push(doc.id);
             });
-
             if ($('total-posts-count')) $('total-posts-count').innerText = totalPosts;
             if ($('total-likes-count')) $('total-likes-count').innerText = totalLikes;
-            
             calculateTotalComments(postIds);
         });
     }, err => console.error("Dashboard Error:", err));
 };
 
 const calculateTotalComments = (postIds) => {
-    if (postIds.length === 0) {
+    if (postIds.length === 0 || !db) {
         if ($('total-comments-count')) $('total-comments-count').innerText = 0;
         return;
     }
-
-    let completedQueries = 0;
-    let combinedCommentsCount = 0;
-
+    let completedQueries = 0, combinedCommentsCount = 0;
     postIds.forEach(id => {
         db.collection("posts").doc(id).collection("comments").get().then(commentSnap => {
             combinedCommentsCount += commentSnap.size;
             completedQueries++;
-
-            if (completedQueries === postIds.length) {
-                if ($('total-comments-count')) $('total-comments-count').innerText = combinedCommentsCount;
+            if (completedQueries === postIds.length && $('total-comments-count')) {
+                $('total-comments-count').innerText = combinedCommentsCount;
             }
         }).catch(e => console.error("Comment Count Error:", e));
     });
 };
 
-// --- ড্যাশবোর্ড গ্রাফ ও ৩০ দিনের অ্যানালিটিক্স সম্পূর্ণ কমপ্লিট কোড ---
+// --- Chart/Analytics Setup ---
 let viewsChartInstance = null;
-
 function getLast30DaysLabels() {
     const labels = [];
     for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const formattedDate = d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' });
-        labels.push(formattedDate);
+        const d = new Date(); d.setDate(d.getDate() - i);
+        labels.push(d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' }));
     }
     return labels;
 }
@@ -836,15 +832,9 @@ function getLast30DaysLabels() {
 function get30DaysData(analyticsData, type) {
     const dataPoints = [];
     for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
+        const d = new Date(); d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0]; 
-        
-        if (analyticsData && analyticsData[dateStr]) {
-            dataPoints.push(analyticsData[dateStr][type] || 0);
-        } else {
-            dataPoints.push(0);
-        }
+        dataPoints.push((analyticsData && analyticsData[dateStr]) ? (analyticsData[dateStr][type] || 0) : 0);
     }
     return dataPoints;
 }
@@ -853,32 +843,21 @@ window.openViewsDetail = function() {
     if ($('views-detail-modal')) $('views-detail-modal').style.display = 'block';
     if ($('views-overlay')) $('views-overlay').style.display = 'block';
     
-    const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
-    if (!currentUserId) return;
+    if(!auth || !auth.currentUser || !db) return;
+    const currentUserId = auth.currentUser.uid;
 
     db.collection("users").doc(currentUserId).onSnapshot((doc) => {
         if (!doc.exists) return;
-        
-        const userData = doc.data();
-        const analytics = userData.analytics || {};
-        
+        const userData = doc.data(), analytics = userData.analytics || {};
         const chartLabels = getLast30DaysLabels();
         const viewsData = get30DaysData(analytics, 'views');
         const threeSecViewsData = get30DaysData(analytics, 'three_sec_views');
         
-        const total3sViews = threeSecViewsData.reduce((a, b) => a + b, 0);
-        if ($('three-sec-views-count')) {
-            $('three-sec-views-count').innerText = total3sViews;
-        }
+        if ($('three-sec-views-count')) $('three-sec-views-count').innerText = threeSecViewsData.reduce((a, b) => a + b, 0);
 
         setTimeout(() => {
             const chartCanvas = document.getElementById('viewsChart');
-            if (!chartCanvas) return;
-            
-            if (typeof Chart === 'undefined') {
-                console.warn("Chart.js library is not loaded yet.");
-                return;
-            }
+            if (!chartCanvas || typeof Chart === 'undefined') return;
             
             const ctx = chartCanvas.getContext('2d');
             if (viewsChartInstance) viewsChartInstance.destroy();
@@ -888,41 +867,16 @@ window.openViewsDetail = function() {
                 data: {
                     labels: chartLabels, 
                     datasets: [
-                        {
-                            label: 'Total Views',
-                            data: viewsData, 
-                            borderColor: '#00e5ff',
-                            backgroundColor: 'rgba(0, 229, 255, 0.05)',
-                            borderWidth: 2,
-                            tension: 0.3, 
-                            fill: true
-                        },
-                        {
-                            label: '3s+ Quality Views',
-                            data: threeSecViewsData, 
-                            borderColor: '#ffeb3b', 
-                            backgroundColor: 'rgba(255, 235, 59, 0.02)',
-                            borderWidth: 1.5,
-                            tension: 0.3, 
-                            fill: true
-                        }
+                        { label: 'Total Views', data: viewsData, borderColor: '#00e5ff', backgroundColor: 'rgba(0, 229, 255, 0.05)', borderWidth: 2, tension: 0.3, fill: true },
+                        { label: '3s+ Quality Views', data: threeSecViewsData, borderColor: '#ffeb3b', backgroundColor: 'rgba(255, 235, 59, 0.02)', borderWidth: 1.5, tension: 0.3, fill: true }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' } },
-                        x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } } 
-                    },
-                    plugins: { 
-                        legend: { display: true, labels: { color: '#fff', boxWidth: 12 } } 
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 6 } } }
                 }
             });
         }, 100);
-    }, (error) => {
-        console.error("Analytics Fetch Error: ", error);
     });
 };
 
@@ -931,11 +885,7 @@ window.closeViewsDetail = function() {
     if ($('views-overlay')) $('views-overlay').style.display = 'none';
 };
 
-// --- প্রোফাইল রাউটার ফাংশন ---
 window.openUserProfile = function(targetUserId, targetAuthor) {
-    console.log("DEBUG -> ক্লিক করা আইডি:", targetUserId, " লেখক:", targetAuthor);
-    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null' || targetUserId === '') {
-        targetUserId = null;
-    }
+    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null') targetUserId = null;
     nav('profile', true, targetUserId, targetAuthor);
 };
