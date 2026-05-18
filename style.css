@@ -64,17 +64,18 @@ body {
     font-size: 13px;
 }
 
-/* --- PREMIUM POST CARD STYLES (ফিক্সড ব্যাকগ্রাউন্ড পরিবর্তন করে ভ্যারিয়েবল করা হলো) --- */
+/* --- PREMIUM POST CARD STYLES --- */
 .post-card {
-    background: var(--card-bg); /* #0d0d0d পরিবর্তন করে ভ্যারিয়েবল দেওয়া হলো */
-    padding: 16px; 
+    background: var(--card-bg); 
+    padding: 16px 0;           
     border-radius: 16px; 
     margin: 15px 8px !important; 
-    border: 1px solid var(--border-color); /* ফিক্সড অপাসিটি বর্ডার পরিবর্তন */
+    border: 1px solid var(--border-color); 
     color: var(--text-color);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
     transition: background 0.3s, color 0.3s, border-color 0.3s;
+    overflow: hidden;          
 }
 
 .post-header {
@@ -82,6 +83,8 @@ body {
     align-items: center;
     gap: 12px;
     margin-bottom: 12px;
+    padding-left: 16px;        
+    padding-right: 16px;
 }
 
 .post-user-pic {
@@ -90,6 +93,23 @@ body {
     border-radius: 50%;
     border: 1.5px solid var(--accent);
     padding: 2px;
+}
+
+/* ক্যাপশন টেক্সটের দুই পাশে স্পেসিং */
+.post-content {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* ─── POST ACTIONS (বাটনগুলো ফেসবুকের মতো একটু ভেতরে আনা হলো) ─── */
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    padding-bottom: 4px;      
+    padding-left: 24px;       /*  লাইক বাটনটিকে কোণা থেকে ভেতরে আনার জন্য */
+    padding-right: 24px;      /*  শেয়ার বাটনটিকে কোণা থেকে ভেতরে আনার জন্য */
+    border-top: 1px solid var(--border-color);
 }
 
 .post-info-meta {
@@ -111,7 +131,7 @@ body {
 .post-content {
     font-size: 14px;
     line-height: 1.5;
-    color: var(--text-color); /* ফিক্সড অপাসিটি কালার পরিবর্তন */
+    color: var(--text-color); 
     margin-bottom: 15px;
 }
 
@@ -125,35 +145,24 @@ body {
     margin: 10px 0;
 }
 
-/* Like, Comment, Share Buttons */
-.post-actions {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-color);
-}
-
+/* ─── লাইক, কমেন্ট, শেয়ার বাটনগুলো বড় করা হলো ─── */
 .action-btn {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 10px;               
+    font-size: 15px;         
     color: #aaa;
     cursor: pointer;
     transition: 0.2s;
-    padding: 8px;
+    padding: 12px 8px;       
     border-radius: 8px;
 }
 
-.action-btn:hover {
-    background: rgba(0, 212, 255, 0.1);
-    color: var(--accent);
-}
-
+/* বাটনগুলোর আইকন বড় করার জন্য */
 .action-btn i {
-    font-size: 16px;
+    font-size: 20px;         
 }
 
 /* Animations */
@@ -322,16 +331,18 @@ input:checked + .slider:before {
 /* Single Reel Card */
 .reel-card {
     width: 100%;
-    height: calc(100vh - 60px); 
+    height: 100vh;              
+    height: 100dvh;             
     scroll-snap-align: start;
     position: relative;
-    background: #000; /* রিলসের ব্যাকগ্রাউন্ড সবসময় কালো রাখাই স্ট্যান্ডার্ড */
+    background: #000; 
 }
 
 .reel-video {
     width: 100%;
     height: 100%;
     object-fit: cover; 
+    display: block;             
 }
 
 /* Reels Info (User & Text) */
@@ -352,4 +363,31 @@ input:checked + .slider:before {
     gap: 20px;
     align-items: center;
     color: white;
+}
+
+/* ─── গ্লোবাল ফিডের মূল কন্টেইনারের প্যাডিং রিমুভ ─── */
+#post-display-area {
+    padding: 0 !important; 
+    width: 100% !important;
+}
+
+/* ─── পোস্ট কার্ডের মার্জিন এবং বর্ডার একদম স্ক্রিনের সাথে ফিট করা ─── */
+#post-display-area .post-card {
+    margin: 15px 0 !important; 
+    width: 100% !important;
+    border-left: none !important;  
+    border-right: none !important;
+    border-radius: 0 !important;   
+}
+
+/* ─── ছবিকে একদম বর্ডারহীন ফুল উইডথ করা ─── */
+#post-display-area .post-image {
+    width: 100% !important;
+    margin: 12px 0 !important;
+    border-radius: 0 !important;  
+}
+/* বাটনের ওপর মাউস বা টাচ রাখলে হালকা ব্যাকগ্রাউন্ড হবে */
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #00e5ff !important; /* তোমার অ্যাপের থিম কালার অনুযায়ী টেক্সট লাইট নীল হবে */
 }
