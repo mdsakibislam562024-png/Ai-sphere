@@ -13,6 +13,7 @@ const auth = firebase.auth(), db = firebase.firestore();
 const cloudName = "ddcdcbepv", uploadPreset = "aisphere_preset"; 
 
 let isLoginMode = true, currentPage = 'home', globalPostsCache = [];
+let isAppUnmuted = false; // গ্লোবাল ভ্যারিয়েবল: শুরুতে রিলস মিউট থাকবে, প্রথম ক্লিকে আনমিউট হবে
 const $ = id => document.getElementById(id);
 const activeListeners = {}; 
 
@@ -46,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if ($('darkModeCheckbox')) $('darkModeCheckbox').checked = isDark;
     document.body.classList.toggle('light-mode', !isDark);
     
-    // ইউজার অলরেডি লগইন থাকলে অটোমেটিক ফ্রেন্ডস ট্র্যাকিং অন রাখার জন্য
     auth.onAuthStateChanged(user => {
         if (user && currentPage === 'friends') loadUsersForFollow();
     });
@@ -59,47 +59,104 @@ const toggleDarkMode = () => {
 };
 
 // --- Navigation & Routing ---
-const toggleSidebar = () => {
+const toggleSidebar = (pushHistory = true) => {
     const active = $('sidebar').classList.toggle('active');
     $('overlay').style.display = active ? 'block' : 'none';
+
+    if (active && pushHistory) {
+        history.pushState({ page: 'sidebar' }, "", "#sidebar");
+    }
 };
 
 window.onpopstate = (e) => {
     const target = e.state?.page || 'home';
-    nav(target, false);
-    if (target === 'home' && ['dashboard', 'profile-security', 'wallet', 'refer', 'support', 'copyright', 'settings', 'privacy', 'about', 'friends'].includes(currentPage)) {
-        if (!$('sidebar').classList.contains('active')) toggleSidebar();
-    } else if ($('sidebar').classList.contains('active')) toggleSidebar();
+    const sidebarPages = ['dashboard', 'profile-security', 'wallet', 'refer', 'support', 'copyright', 'settings', 'privacy', 'about'];
+    
+    if (target === 'sidebar') {
+        if (sidebarPages.includes(currentPage)) {
+            sections.forEach(s => $(s) && ($(s).style.display = 'none'));
+            $('hero-section').style.display = 'flex';
+            currentPage = 'home';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            $('tab-home')?.classList.add('active');
+            
+            if (!$('sidebar').classList.contains('active')) {
+                toggleSidebar(false); 
+            }
+        } else {
+            nav('home', false);
+        }
+    } 
+    else if (target === 'home' && $('sidebar').classList.contains('active')) {
+        toggleSidebar(false);
+    } 
+    else {
+        nav(target, false);
+        if ($('sidebar').classList.contains('active')) {
+            toggleSidebar(false);
+        }
+    }
 };
 
-// সেকশন লিস্ট
 const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section', 'about-page', 'privacy-page', 'settings-page', 'dashboard-page', 'profile-security-page', 'wallet-page', 'refer-page', 'support-page', 'copyright-page', 'friends-page'];
 
-function nav(page, addHistory = true) {
+function nav(page, addHistory = true, targetUserId = null, targetAuthor = null) {
     sections.forEach(s => $(s) && ($(s).style.display = 'none'));
+    
     if (page === 'home') {
         $('hero-section').style.display = 'flex';
     } else {
-        const target = page === 'profile' ? 'profile-page' : page === 'global-feed' ? 'global-feed-section' : page === 'reels' ? 'reels-section' : page === 'about' ? 'about-page' : page === 'privacy' ? 'privacy-page' : page === 'settings' ? 'settings-page' : page === 'friends' ? 'friends-page' : ($(sections.includes(page + '-page')) ? page + '-page' : page + '-section');
+        let target = page + '-page';
+        if (page === 'profile') target = 'profile-page';
+        else if (page === 'global-feed') target = 'global-feed-section';
+        else if (page === 'reels') target = 'reels-section';
+        else if (page === 'messages') target = 'messages-section';
+        else if (page === 'friends') target = 'friends-page';
+        else if (page === 'support') target = 'support-page';
+        else if (page === 'refer') target = 'refer-page';
+        else if (page === 'dashboard') target = 'dashboard-page';
+
         if ($(target)) {
-            // যদি মেসেজ পেজ হয় তবে flex ডিসপ্লে হবে ফুল স্ক্রিনের জন্য, অন্যথায় block হবে
             $(target).style.display = page === 'messages' ? 'flex' : 'block';
             
             if (page === 'global-feed') loadPosts();
-            if (page === 'profile') { loadUserProfile(); loadMyPosts(); }
+            if (page === 'profile') { 
+                loadUserProfile(targetUserId, targetAuthor); 
+                loadMyPosts(targetUserId); 
+            }
             if (page === 'reels') loadReels();
-            if (page === 'friends') loadUsersForFollow(); // ফ্রেন্ডস পেজে গেলে ইউজার লিস্ট লোড হবে
+            if (page === 'friends') loadUsersForFollow(); 
+            if (page === 'dashboard') loadDashboardAnalytics(); 
         }
     }
+    
     if (addHistory) history.pushState({ page }, "", "#" + page);
     currentPage = page;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     $('tab-' + page)?.classList.add('active');
-    if (addHistory && $('sidebar').classList.contains('active')) toggleSidebar();
+    
+    if (addHistory && $('sidebar').classList.contains('active')) {
+        toggleSidebar(false); 
+    }
 }
 
-// --- Shortcuts for Sidebar Pages ---
-const openDashboard = () => nav('dashboard'), openProfileSecurity = () => nav('profile-security'), openWallet = () => nav('wallet'), openReferral = () => nav('refer'), openCopyright = () => nav('copyright'), openSettings = () => nav('settings'), openPrivacy = () => nav('privacy'), openAbout = () => nav('about'), openLiveSupport = () => nav('support');
+const sidebarNav = (page) => { 
+    history.pushState({ page: 'sidebar' }, "", "#sidebar"); 
+    nav(page, false); 
+    if ($('sidebar').classList.contains('active')) {
+        toggleSidebar(false); 
+    }
+};
+
+const openDashboard = () => sidebarNav('dashboard'), 
+      openProfileSecurity = () => sidebarNav('profile-security'), 
+      openWallet = () => sidebarNav('wallet'), 
+      openReferral = () => sidebarNav('refer'), 
+      openCopyright = () => sidebarNav('copyright'), 
+      openSettings = () => sidebarNav('settings'), 
+      openPrivacy = () => sidebarNav('privacy'), 
+      openAbout = () => sidebarNav('about'), 
+      openLiveSupport = () => sidebarNav('support');
 
 // --- Authentication Engine ---
 const toggleAuthMode = () => {
@@ -140,28 +197,73 @@ const changePassword = () => {
 const handleLogout = () => auth.signOut().then(() => location.reload());
 
 // --- Profile Customization ---
-const loadUserProfile = () => {
-    const user = auth.currentUser; if (!user) return;
+const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
+    const user = auth.currentUser; 
+    if (!user) return;
+
+    const myUid = user.uid;
+    const myUsername = user.email.split('@')[0].toLowerCase();
     
-    db.collection("users").doc(user.uid).onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.profilePic) $('my-profile-img').src = data.profilePic;
-            if (data.coverPic) $('my-cover-img').src = data.coverPic;
-            
-            const currentName = data.displayName || data.name || data.username || user.email.split('@')[0];
-            $('profile-name').innerText = currentName.toUpperCase();
-            $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
+    const isOwnProfile = (!targetUserId || targetUserId === myUid || (targetAuthor && targetAuthor.toLowerCase() === myUsername));
+
+    if (window.activeProfileListener) window.activeProfileListener();
+    if (window.activeFollowersListener) window.activeFollowersListener();
+    if (window.activeFollowingListener) window.activeFollowingListener();
+
+    if (isOwnProfile) {
+        const editBtn = document.querySelector("#profile-page button[onclick*='editProfileDetails']");
+        if(editBtn) editBtn.style.display = "inline-block";
+
+        window.activeProfileListener = db.collection("users").doc(myUid).onSnapshot(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.profilePic) $('my-profile-img').src = data.profilePic;
+                if (data.coverPic) $('my-cover-img').src = data.coverPic;
+                
+                const currentName = data.displayName || data.name || data.username || myUsername;
+                $('profile-name').innerText = currentName.toUpperCase();
+                $('profile-bio').innerText = data.bio || "Cyber Security Expert | Developer";
+            }
+        });
+
+        window.activeFollowersListener = db.collection("users").doc(myUid).collection("followers").onSnapshot(snap => {
+            if ($('follower-count')) $('follower-count').innerText = snap.size;
+        });
+
+        window.activeFollowingListener = db.collection("users").doc(myUid).collection("following").onSnapshot(snap => {
+            if ($('following-count')) $('following-count').innerText = snap.size;
+        });
+
+    } else {
+        const editBtn = document.querySelector("#profile-page button[onclick*='editProfileDetails']");
+        if(editBtn) editBtn.style.display = "none";
+
+        let cleanName = targetAuthor ? targetAuthor.replace('@', '') : "User";
+        $('profile-name').innerText = cleanName.toUpperCase();
+        $('profile-bio').innerText = "AI Sphere Member";
+        $('my-profile-img').src = "https://i.pravatar.cc/100?u=" + cleanName;
+        $('my-cover-img').src = "https://via.placeholder.com/600x200?text=AI+Sphere+Cover"; 
+
+        if (targetUserId && targetUserId !== 'undefined' && targetUserId !== '') {
+            window.activeProfileListener = db.collection("users").doc(targetUserId).onSnapshot(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if ($('profile-bio')) $('profile-bio').innerText = data.bio || "No bio available.";
+                    if ($('my-profile-img') && data.profilePic) $('my-profile-img').src = data.profilePic;
+                    if ($('my-cover-img') && data.coverPic) $('my-cover-img').src = data.coverPic;
+                    if (data.displayName || data.name) $('profile-name').innerText = (data.displayName || data.name).toUpperCase();
+                }
+            });
+
+            window.activeFollowersListener = db.collection("users").doc(targetUserId).collection("followers").onSnapshot(snap => {
+                if ($('follower-count')) $('follower-count').innerText = snap.size;
+            });
+
+            window.activeFollowingListener = db.collection("users").doc(targetUserId).collection("following").onSnapshot(snap => {
+                if ($('following-count')) $('following-count').innerText = snap.size;
+            });
         }
-    });
-
-    db.collection("users").doc(user.uid).collection("followers").onSnapshot(snap => {
-        if ($('follower-count')) $('follower-count').innerText = snap.size;
-    });
-
-    db.collection("users").doc(user.uid).collection("following").onSnapshot(snap => {
-        if ($('following-count')) $('following-count').innerText = snap.size;
-    });
+    }
 };
 
 const editProfileDetails = () => {
@@ -204,50 +306,148 @@ async function updateProfileMedia(type) {
     }
 }
 
-// --- Post & Like Features ---
-const handlePostSubmit = async () => {
-    const content = $('post-input').value, file = $('post-image-input')?.files[0];
-    if (!content.trim() && !file) return;
+// --- ক্রিয়েট পোস্ট মডাল কন্ট্রোলারস ---
+const openPostModal = () => {
+    $('post-popup-overlay').style.display = 'block';
+    $('post-popup-modal').style.display = 'block';
+    $('modal-post-title').value = "";
+    $('modal-post-input').value = "";
+    $('modal-post-tags').value = "";
+    $('modal-media-preview').style.display = 'none';
+    $('modal-media-preview').innerHTML = "";
+    $('post-media-trigger').value = ""; 
+};
+
+const closePostModal = () => {
+    $('post-popup-overlay').style.display = 'none';
+    $('post-popup-modal').style.display = 'none';
+};
+
+const handleMediaSelection = (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    $('post-popup-overlay').style.display = 'block';
+    $('post-popup-modal').style.display = 'block';
+
+    const previewContainer = $('modal-media-preview');
+    previewContainer.innerHTML = "";
+    previewContainer.style.display = 'block';
+
+    const fileURL = URL.createObjectURL(file);
+
+    if (file.type.startsWith('video/')) {
+        previewContainer.innerHTML = `<video src="${fileURL}" controls style="width:100%; max-height:220px; object-fit:cover;"></video>`;
+    } else {
+        previewContainer.innerHTML = `<img src="${fileURL}" style="width:100%; max-height:220px; object-fit:cover;">`;
+    }
+};
+
+// --- নতুন নিয়মে UID সহ পোস্ট সাবমিট ---
+const handleModalPostSubmit = async () => {
+    const title = $('modal-post-title').value.trim();
+    const content = $('modal-post-input').value.trim();
+    const tags = $('modal-post-tags').value.trim();
+    const file = $('post-media-trigger').files[0];
+    const submitBtn = $('modal-submit-btn');
+
+    if (!content && !title && !file) return alert("সাকিব, খালি পোস্ট করা যাবে না!");
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> আপলোড হচ্ছে...`;
+
     const url = file ? await uploadToCloudinary(file) : null;
-    db.collection("posts").add({ text: content, image: url, author: auth.currentUser?.email.split('@')[0] || 'SAKIB', timestamp: firebase.firestore.FieldValue.serverTimestamp(), likes: 0 })
-        .then(() => { $('post-input').value = ""; if ($('post-image-input')) $('post-image-input').value = ""; alert("পোস্ট হয়েছে!"); })
-        .catch(e => alert("Post Error: " + e.message));
-};
 
-const handleLike = (e, id) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    [`like-count-${id}`, `reel-like-count-${id}`].forEach(sel => {
-        const el = $(sel); if (el) el.innerText = (parseInt(el.innerText) || 0) + 1;
+    let fullText = "";
+    if (title) fullText += `⚡ **${title}**\n\n`;
+    fullText += content;
+    if (tags) fullText += `\n\n${tags}`;
+
+    const currentUid = auth.currentUser ? auth.currentUser.uid : '';
+
+    db.collection("posts").add({
+        text: fullText,
+        image: url,
+        author: auth.currentUser?.email.split('@')[0] || 'SAKIB',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        likes: 0,
+        userId: currentUid, 
+        uid: currentUid 
+    })
+    .then(() => {
+        alert("পোস্টটি সফলভাবে গ্লোবাল ফিডে লাইভ হয়েছে!");
+        closePostModal();
+    })
+    .catch(e => alert("Post Error: " + e.message))
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> পোস্ট করুন`;
     });
-    db.collection("posts").doc(id).update({ likes: firebase.firestore.FieldValue.increment(1) }).catch(err => console.error(err));
 };
 
-const handleShare = () => { navigator.clipboard.writeText(window.location.href); alert("লিঙ্ক কপি হয়েছে!"); };
+// --- Real-time Like Handler ---
+window.handleLike = (event, postId) => {
+    if(event) event.stopPropagation(); 
+    const postRef = db.collection("posts").doc(postId);
+    
+    db.runTransaction((transaction) => {
+        return transaction.get(postRef).then((postDoc) => {
+            if (!postDoc.exists) return;
+            const currentLikes = postDoc.data().likes || 0;
+            transaction.update(postRef, { likes: currentLikes + 1 });
+        });
+    })
+    .catch((err) => console.error("Like Error: ", err));
+};
 
 // --- Feed UI Template Generator ---
 const createPostHTML = (id, data) => {
     let media = "";
     if (data.image) {
         const isVid = data.image.match(/\.(mp4|webm|ogg|mov)/i) || data.image.includes("/video/upload/");
-        media = isVid ? `<video src="${data.image}" controls style="width:100%; border-radius:12px; margin:10px 0;"></video>` : `<img src="${data.image}" style="width:100%; border-radius:12px; margin:10px 0;">`;
+        media = isVid ? `<video src="${data.image}" controls class="post-image"></video>` : `<img src="${data.image}" class="post-image">`;
     }
+    
+    const postUserId = data.userId || data.uid || '';
+    const postAuthor = data.author || 'User';
+
     return `
-    <div class="post-card" id="post-card-${id}" style="margin-bottom:15px; padding:15px; background:var(--card-bg); border-radius:15px; border:1px solid var(--border-color); overflow:hidden;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:var(--accent); font-size:15px;">@${data.author}</strong>
-            <span style="font-size:11px; opacity:0.5; color:var(--text-color);"><i class="far fa-clock" style="margin-right:3px;"></i>${formatTimeAgo(data.timestamp)}</span>
+    <div class="post-card" id="post-card-${id}" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; margin-bottom: 20px;">
+        <div class="post-header" style="margin-bottom: 12px;">
+            <div class="post-info-meta">
+                <strong class="post-user-name" onclick="window.openUserProfile('${postUserId}', '${postAuthor}')" style="color: var(--accent); font-size: 15px; cursor: pointer; display: inline-block; user-select: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">@${postAuthor}</strong>
+                <span class="post-time" style="font-size: 12px; opacity: 0.5; margin-left: 10px;"><i class="far fa-clock" style="margin-right:3px;"></i>${formatTimeAgo(data.timestamp)}</span>
+            </div>
         </div>
-        <p style="margin-top:5px; font-size:14px; line-height:1.5; color:var(--text-color);">${data.text}</p>${media}
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:10px; border-top:1px solid var(--border-color); color:var(--text-color);">
-            <button onclick="handleLike(event, '${id}')" style="background:transparent; border:none; outline:none; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:14px; color:inherit; padding:0;"><i class="fas fa-heart" style="color:#ff4444;"></i><span id="like-count-${id}">${data.likes || 0}</span></button>
-            <button onclick="toggleInlineCommentBox('${id}', false)" style="background:transparent; border:none; outline:none; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:14px; color:inherit; padding:0;"><i class="fas fa-comment"></i><span id="comment-count-${id}">0</span></button>
-            <button onclick="handleShare()" style="background:transparent; border:none; outline:none; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:14px; color:inherit; padding:0;"><i class="fas fa-share"></i><span>Share</span></button>
+        <p class="post-content" style="font-size: 14.5px; line-height: 1.5; margin-bottom: 12px;">${data.text}</p>
+        ${media}
+        
+        <div class="post-stats" style="display: flex; justify-content: space-between; padding: 8px 5px; font-size: 13px; color: #b0b3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-top: 10px;">
+            <div class="stats-left" style="display: flex; align-items: center; gap: 5px;">
+                <span> <span id="like-count-${id}">${data.likes || 0}</span> লাইকস</span>
+            </div>
+            <div class="stats-right">
+                <span><span id="comment-count-${id}">0</span> comments</span>
+            </div>
         </div>
+
+        <div class="post-actions-wrapper" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; margin-top: 5px;">
+            <button class="action-btn" onclick="window.handleLike(event, '${id}')" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+                <i class="far fa-thumbs-up" style="font-size: 16px;"></i> লাইক
+            </button>
+            <button class="action-btn" onclick="toggleInlineCommentBox('${id}', false)" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+                <i class="far fa-comment" style="font-size: 16px;"></i> কমেন্ট
+            </button>
+            <button class="action-btn" onclick="handleShare()" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; background: transparent; border: none; color: #b0b3b8; padding: 10px 5px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s;">
+                <i class="fas fa-share" style="font-size: 15px;"></i> শেয়ার
+            </button>
+        </div>
+
         <div id="inline-comment-box-${id}" data-opened="false" style="display:none; margin-top:15px; padding-top:15px; border-top:1px dashed var(--border-color);">
             <div id="inline-comments-list-${id}" style="max-height:200px; overflow-y:auto; margin-bottom:12px;"></div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" id="inline-input-${id}" placeholder="একটি মন্তব্য লিখুন..." style="flex:1; background:rgba(0,0,0,0.03); border:1px solid var(--border-color); color:var(--text-color); padding:8px 14px; border-radius:20px; outline:none; font-size:13px;">
-                <button onclick="handleCommentSubmitData('${id}', false)" style="background:var(--accent); color:#000; border:none; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="fas fa-paper-plane" style="font-size:12px;"></i></button>
+            <div style="display:flex; gap:8px; align-items:center; padding-bottom:12px;">
+                <input type="text" id="inline-input-${id}" placeholder="একটি মন্তব্য লিখুন..." style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-color); padding:8px 14px; border-radius:20px; outline:none; font-size:13px;">
+                <button onclick="handleCommentSubmitData('${id}', false)" style="background:var(--accent); color:#000; border:none; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-paper-plane" style="font-size:12px;"></i></button>
             </div>
         </div>
     </div>`;
@@ -274,13 +474,30 @@ const loadPosts = () => {
     });
 };
 
-const loadMyPosts = () => {
+const loadMyPosts = (targetUserId = null) => {
     const user = auth.currentUser; if (!user) return;
-    db.collection("posts").where("author", "==", user.email.split('@')[0]).onSnapshot(snap => {
-        $('user-posts-area').innerHTML = "";
-        snap.forEach(doc => $('user-posts-area').innerHTML += createPostHTML(doc.id, doc.data()));
-    });
+    
+    let searchId = user.email.split('@')[0];
+    if (targetUserId && targetUserId !== user.uid) {
+        db.collection("users").doc(targetUserId).get().then(uDoc => {
+            if(uDoc.exists) {
+                searchId = uDoc.data().username || uDoc.data().email.split('@')[0];
+                fetchMyPostsFromFirestore(searchId);
+            }
+        });
+    } else {
+        fetchMyPostsFromFirestore(searchId);
+    }
 };
+
+function fetchMyPostsFromFirestore(authorName) {
+    db.collection("posts").where("author", "==", authorName).get().then(snap => {
+        if ($('user-posts-area')) {
+            $('user-posts-area').innerHTML = snap.empty ? `<p style="text-align:center; opacity:0.5; padding:20px;">কোনো পোস্ট পাওয়া যায়নি</p>` : "";
+            snap.forEach(doc => $('user-posts-area').innerHTML += createPostHTML(doc.id, doc.data()));
+        }
+    });
+}
 
 // --- Real-time Comments Engine ---
 const toggleInlineCommentBox = (postId, isReel = false) => {
@@ -328,20 +545,29 @@ const loadCommentsCount = (id) => {
 const loadReels = () => {
     db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         const area = $('reels-section'); if (!area) return;
+        
         if (area.children.length === 0) {
+            let htmlContent = ""; 
+            
             snapshot.forEach(doc => {
                 const d = doc.data();
                 if (d.image && (d.image.match(/\.(mp4|webm|ogg|mov)/i) || d.image.includes("/video/upload/"))) {
-                    area.innerHTML += `
-                    <div class="reel-card" id="reel-card-${doc.id}" style="position:relative; width:100%; height:100%; background:#000; scroll-snap-align:start; display:flex; flex-direction:column; overflow:hidden;">
+                    const reelUserId = d.userId || d.uid || '';
+                    const reelAuthor = d.author || 'User';
+                    
+                    htmlContent += `
+                    <div class="reel-card" id="reel-card-${doc.id}" data-id="${doc.id}" data-creator="${reelUserId}" style="position:relative; width:100%; height:100%; background:#000; scroll-snap-align:start; display:flex; flex-direction:column; overflow:hidden;">
                         <div style="position:relative; width:100%; flex:1; background:#000;">
-                            <video src="${d.image}" loop muted playsinline style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:1;" onclick="this.paused ? this.play() : this.pause(); this.muted = false;"></video>
+                            <video src="${d.image}" loop muted playsinline style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:1;" onclick="handleReelClick(this)"></video>
                             <div style="position:absolute; bottom:20px; left:15px; color:#fff; z-index:5; text-shadow:2px 2px 8px rgba(0,0,0,0.8); max-width:70%; pointer-events:none;">
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><h4 style="color:#00e5ff; margin:0; font-size:16px; font-weight:bold;">@${d.author}</h4><span style="font-size:11px; opacity:0.7; background:rgba(0,0,0,0.4); padding:2px 6px; border-radius:10px;">${formatTimeAgo(d.timestamp)}</span></div>
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+                                    <h4 style="color:#00e5ff; margin:0; font-size:16px; font-weight:bold; cursor:pointer; pointer-events:auto;" onclick="window.openUserProfile('${reelUserId}', '${reelAuthor}')">@${reelAuthor}</h4>
+                                    <span style="font-size:11px; opacity:0.7; background:rgba(0,0,0,0.4); padding:2px 6px; border-radius:10px;">${formatTimeAgo(d.timestamp)}</span>
+                                </div>
                                 <p style="font-size:13px; opacity:0.9; margin:0; line-height:1.4;">${d.text}</p>
                             </div>
-                            <div style="position:absolute; right:15px; bottom:30px; display:flex; flex-direction:column; gap:22px; color:#fff; z-index:10; text-align:center; background:rgba(0,0,0,0.3); padding:15px 10px; border-radius:30px; backdrop-filter:blur(5px);">
-                                <button onclick="handleLike(event, '${doc.id}')" style="background:transparent; border:none; outline:none; cursor:pointer; color:#fff;"><i class="fas fa-heart" style="color:#ff4444; font-size:26px;"></i><div id="reel-like-count-${doc.id}" style="font-weight:bold; font-size:12px; margin-top:4px;">${d.likes || 0}</div></button>
+                            <div style="position:absolute; right:20px; bottom:50px; display:flex; flex-direction:column; gap:22px; color:#fff; z-index:10; text-align:center; background:rgba(0,0,0,0.4); padding:18px 12px; border-radius:30px; backdrop-filter:blur(5px);">
+                                <button onclick="window.handleLike(event, '${doc.id}')" style="background:transparent; border:none; outline:none; cursor:pointer; color:#fff;"><i class="fas fa-heart" style="color:#ff4444; font-size:26px;"></i><div id="reel-like-count-${doc.id}" style="font-weight:bold; font-size:12px; margin-top:4px;">${d.likes || 0}</div></button>
                                 <div onclick="toggleInlineCommentBox('${doc.id}', true)" style="cursor:pointer;"><i class="fas fa-comment" style="color:#fff; font-size:26px;"></i><div id="reel-comment-count-${doc.id}" style="font-weight:bold; font-size:12px; margin-top:4px;">0</div></div>
                                 <div onclick="handleShare()" style="cursor:pointer;"><i class="fas fa-share" style="color:#fff; font-size:26px;"></i><div style="font-weight:bold; font-size:11px; margin-top:4px;">Share</div></div>
                             </div>
@@ -355,13 +581,104 @@ const loadReels = () => {
                     loadCommentsCount(doc.id);
                 }
             });
-        } else {
-            snapshot.docChanges().forEach(change => {
-                if (change.type === "modified" && $(`reel-like-count-${change.doc.id}`)) $(`reel-like-count-${change.doc.id}`).innerText = change.doc.data().likes || 0;
-            });
+            area.innerHTML = htmlContent;
+            initReelsObserver();
         }
     });
 };
+
+// প্রিমিয়াম রিলস ক্লিক হ্যান্ডেলার (প্রথম ক্লিকে গ্লোবাল সাউন্ড আনমিউট করবে)
+window.handleReelClick = function(videoElement) {
+    if (!isAppUnmuted) {
+        isAppUnmuted = true;
+        videoElement.muted = false;
+        console.log("Premium Mode Enabled: All coming reels will play with audio.");
+    } else {
+        if (videoElement.paused) {
+            videoElement.play();
+        } else {
+            videoElement.pause();
+        }
+    }
+};
+
+let activeReelTimeout = null; 
+
+function initReelsObserver() {
+    const cards = document.querySelectorAll('.reel-card');
+    const observerOptions = { root: $('reels-section'), threshold: 0.8 };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target.querySelector('video');
+            const reelId = entry.target.getAttribute('data-id');
+            const creatorId = entry.target.getAttribute('data-creator');
+            
+            if (entry.isIntersecting) {
+                if (video) {
+                    // যদি ইউজার আগে কোনো রিলসে ক্লিক করে থাকে, তবে এটি আনমিউটড অবস্থায় চলবে
+                    if (isAppUnmuted) {
+                        video.muted = false;
+                    } else {
+                        video.muted = true;
+                    }
+                    video.play().catch(e => console.log("Auto-play blocked"));
+                }
+                trackUniqueReelView(reelId, creatorId);
+            } else {
+                if (video) { video.pause(); video.currentTime = 0; }
+            }
+        });
+    }, observerOptions);
+    cards.forEach(card => observer.observe(card));
+}
+
+function trackUniqueReelView(reelDocId, creatorId) {
+    const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+    if (!currentUserId || !creatorId || currentUserId === creatorId) return;
+
+    const todayStr = new Date().toISOString().split('T')[0]; 
+    const reelRef = db.collection("posts").doc(reelDocId);
+
+    if (activeReelTimeout) clearTimeout(activeReelTimeout);
+
+    reelRef.get().then((doc) => {
+        if (!doc.exists) return;
+        
+        const reelData = doc.data();
+        const viewedUsers = reelData.viewed_users || [];
+        const viewedThreeSecUsers = reelData.viewed_three_sec_users || [];
+
+        if (!viewedUsers.includes(currentUserId)) {
+            db.collection("users").doc(creatorId).update({
+                [`analytics.${todayStr}.views`]: firebase.firestore.FieldValue.increment(1)
+            }).catch(e => console.log("Analytics field generating..."));
+
+            reelRef.update({
+                viewed_users: firebase.FieldValue.arrayUnion(currentUserId)
+            });
+        }
+
+        if (!viewedThreeSecUsers.includes(currentUserId)) {
+            activeReelTimeout = setTimeout(() => {
+                reelRef.get().then((latestDoc) => {
+                    if (!latestDoc.exists) return;
+                    const updatedThreeSecUsers = latestDoc.data().viewed_three_sec_users || [];
+                    
+                    if (!updatedThreeSecUsers.includes(currentUserId)) {
+                        db.collection("users").doc(creatorId).update({
+                            [`analytics.${todayStr}.three_sec_views`]: firebase.firestore.FieldValue.increment(1)
+                        });
+
+                        reelRef.update({
+                            viewed_three_sec_users: firebase.firestore.FieldValue.arrayUnion(currentUserId)
+                        });
+                    }
+                });
+            }, 3000); 
+        }
+    }).catch(error => console.error("Tracking Engine Error:", error));
+}
 
 // --- Real-Time Friends & Follow Engine ---
 const loadUsersForFollow = () => {
@@ -398,7 +715,7 @@ const loadUsersForFollow = () => {
 
                 container.innerHTML += `
                 <div class="user-card" style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.openUserProfile('${userId}', '${userName}')">
                         <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; overflow:hidden;">${userAvatar}</div>
                         <div>
                             <h4 style="margin: 0; font-size: 14px; color: var(--text-color);">${userName.toUpperCase()}</h4>
@@ -431,12 +748,194 @@ const handleFollowToggle = (btn) => {
 
     if (isFollowing) {
         Promise.all([myFollowingRef.delete(), targetFollowersRef.delete()])
-        .then(() => { btn.classList.remove('following'); btn.innerText = "Follow"; })
         .catch(e => console.error("Unfollow Error:", e));
     } else {
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
         Promise.all([myFollowingRef.set({ timestamp: timestamp }), targetFollowersRef.set({ timestamp: timestamp })])
-        .then(() => { btn.classList.add('following'); btn.innerText = "Following"; })
         .catch(e => console.error("Follow Error:", e));
     }
+};
+
+// --- Real-Time Dashboard Analytics Engine ---
+let dashboardListener = null;
+
+const loadDashboardAnalytics = () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (dashboardListener) dashboardListener();
+
+    dashboardListener = db.collection("users").doc(user.uid).onSnapshot(userDoc => {
+        let totalViews = 0;
+        
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            const analytics = userData.analytics || {};
+            
+            for (let date in analytics) {
+                totalViews += (analytics[date].views || 0);
+            }
+        }
+        
+        if ($('total-views-count')) $('total-views-count').innerText = totalViews;
+
+        db.collection("posts").where("author", "==", user.email.split('@')[0]).get().then(snapshot => {
+            let totalPosts = snapshot.size;
+            let totalLikes = 0;
+            let postIds = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                totalLikes += (data.likes || 0);
+                postIds.push(doc.id);
+            });
+
+            if ($('total-posts-count')) $('total-posts-count').innerText = totalPosts;
+            if ($('total-likes-count')) $('total-likes-count').innerText = totalLikes;
+            
+            calculateTotalComments(postIds);
+        });
+    }, err => console.error("Dashboard Error:", err));
+};
+
+const calculateTotalComments = (postIds) => {
+    if (postIds.length === 0) {
+        if ($('total-comments-count')) $('total-comments-count').innerText = 0;
+        return;
+    }
+
+    let completedQueries = 0;
+    let combinedCommentsCount = 0;
+
+    postIds.forEach(id => {
+        db.collection("posts").doc(id).collection("comments").get().then(commentSnap => {
+            combinedCommentsCount += commentSnap.size;
+            completedQueries++;
+
+            if (completedQueries === postIds.length) {
+                if ($('total-comments-count')) $('total-comments-count').innerText = combinedCommentsCount;
+            }
+        }).catch(e => console.error("Comment Count Error:", e));
+    });
+};
+
+// --- ড্যাশবোর্ড গ্রাফ ও ৩০ দিনের অ্যানালিটিক্স সম্পূর্ণ কমপ্লিট কোড ---
+let viewsChartInstance = null;
+
+function getLast30DaysLabels() {
+    const labels = [];
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const formattedDate = d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' });
+        labels.push(formattedDate);
+    }
+    return labels;
+}
+
+function get30DaysData(analyticsData, type) {
+    const dataPoints = [];
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0]; 
+        
+        if (analyticsData && analyticsData[dateStr]) {
+            dataPoints.push(analyticsData[dateStr][type] || 0);
+        } else {
+            dataPoints.push(0);
+        }
+    }
+    return dataPoints;
+}
+
+window.openViewsDetail = function() {
+    if ($('views-detail-modal')) $('views-detail-modal').style.display = 'block';
+    if ($('views-overlay')) $('views-overlay').style.display = 'block';
+    
+    const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+    if (!currentUserId) return;
+
+    db.collection("users").doc(currentUserId).onSnapshot((doc) => {
+        if (!doc.exists) return;
+        
+        const userData = doc.data();
+        const analytics = userData.analytics || {};
+        
+        const chartLabels = getLast30DaysLabels();
+        const viewsData = get30DaysData(analytics, 'views');
+        const threeSecViewsData = get30DaysData(analytics, 'three_sec_views');
+        
+        const total3sViews = threeSecViewsData.reduce((a, b) => a + b, 0);
+        if ($('three-sec-views-count')) {
+            $('three-sec-views-count').innerText = total3sViews;
+        }
+
+        setTimeout(() => {
+            const chartCanvas = document.getElementById('viewsChart');
+            if (!chartCanvas) return;
+            
+            if (typeof Chart === 'undefined') {
+                console.warn("Chart.js library is not loaded yet.");
+                return;
+            }
+            
+            const ctx = chartCanvas.getContext('2d');
+            if (viewsChartInstance) viewsChartInstance.destroy();
+            
+            viewsChartInstance = new Chart(ctx, {
+                type: 'line', 
+                data: {
+                    labels: chartLabels, 
+                    datasets: [
+                        {
+                            label: 'Total Views',
+                            data: viewsData, 
+                            borderColor: '#00e5ff',
+                            backgroundColor: 'rgba(0, 229, 255, 0.05)',
+                            borderWidth: 2,
+                            tension: 0.3, 
+                            fill: true
+                        },
+                        {
+                            label: '3s+ Quality Views',
+                            data: threeSecViewsData, 
+                            borderColor: '#ffeb3b', 
+                            backgroundColor: 'rgba(255, 235, 59, 0.02)',
+                            borderWidth: 1.5,
+                            tension: 0.3, 
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } } 
+                    },
+                    plugins: { 
+                        legend: { display: true, labels: { color: '#fff', boxWidth: 12 } } 
+                    }
+                }
+            });
+        }, 100);
+    }, (error) => {
+        console.error("Analytics Fetch Error: ", error);
+    });
+};
+
+window.closeViewsDetail = function() {
+    if ($('views-detail-modal')) $('views-detail-modal').style.display = 'none';
+    if ($('views-overlay')) $('views-overlay').style.display = 'none';
+};
+
+// --- প্রোফাইল রাউটার ফাংশন ---
+window.openUserProfile = function(targetUserId, targetAuthor) {
+    console.log("DEBUG -> ক্লিক করা আইডি:", targetUserId, " লেখক:", targetAuthor);
+    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null' || targetUserId === '') {
+        targetUserId = null;
+    }
+    nav('profile', true, targetUserId, targetAuthor);
 };
