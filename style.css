@@ -11,11 +11,11 @@
 
 /* ─── হোয়াইট মোড (লাইট মোড) কালারসমূহ ─── */
 body.light-mode {
-    --bg-dark: #f5f7fb;       /* লাইট মোডের মেইন ব্যাকগ্রাউন্ড */
-    --text-color: #1a1a1a;     /* কালো বা ডার্ক টেক্সট */
-    --card-bg: #ffffff;       /* সাদা কার্ড */
-    --border-color: #e0e0e0;   /* হালকা বর্ডার */
-    --sidebar-bg: #ffffff;    /* সাদা সাইডবার */
+    --bg-dark: #f5f7fb;       
+    --text-color: #1a1a1a;     
+    --card-bg: #ffffff;       
+    --border-color: #e0e0e0;   
+    --sidebar-bg: #ffffff;    
     --blue-grad: radial-gradient(circle, #b3c5ff 0%, #f5f7fb 100%);
 }
 
@@ -38,6 +38,27 @@ body {
     overflow-y: auto;
     display: none;
     transition: background 0.3s;
+}
+
+/* ─── রিলস সেকশন ফিক্স (স্থায়ী ডার্ক মোড লক) ─── */
+#reels-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    background: #000000 !important; /* মেইন ব্যাকগ্রাউন্ড কালো */
+    z-index: 5000;
+    overflow-y: scroll !important;
+    scroll-snap-type: y mandatory;
+    display: none;
+    scrollbar-width: none; 
+    margin: 0 !important;
+    padding: 0 0 60px 0 !important; 
+}
+#reels-section::-webkit-scrollbar {
+    display: none; 
 }
 
 /* --- EARTH BUTTON INTERACTION --- */
@@ -64,31 +85,42 @@ body {
     font-size: 13px;
 }
 
-/* ─── গ্লোবাল ফিডের মূল কন্টেইনারের প্যাডিং রিমুভ ─── */
-#post-display-area {
-    padding: 0 !important; 
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+/* --- PREMIUM POST CARD STYLES FIXED --- */
+.post-card {
+    background: var(--card-bg); 
+    padding: 0 !important;
+    margin: 15px 0px !important; 
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    width: 100% !important; 
+    display: block !important;
+    overflow: visible !important;
 }
 
-/* ─── পোস্ট কার্ডের ফ্রেম ও মার্জিন স্ক্রিনের সাথে লক করা ─── */
-#post-display-area .post-card {
-    background: var(--card-bg); 
-    padding: 16px 0;           
-    margin: 15px 0 !important; /* ডানে-বামে মার্জিন ০ করে স্ক্রিনের সাথে মেলানো হলো */
+/* পোস্টের ইমেজ কন্টেইনার যেন বড় জায়গা নিতে পারে */
+.post-card {
+    background: var(--card-bg);
     width: 100% !important;
-    max-width: 100% !important;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    border-left: none !important;  
-    border-right: none !important;
-    border-radius: 0 !important;   /* কোণার রাউন্ড শেপ রিমুভ করে ফুল উইডথ লুক */
-    box-shadow: none !important;   /* ফ্রেমের মতো শ্যাডো রিমুভ */
-    color: var(--text-color);
-    animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-    transition: background 0.3s, color 0.3s, border-color 0.3s;
-    overflow: hidden;          
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    margin: 15px 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.post-image {
+    width: 100% !important;
+    height: 500px !important; /* আরও বড় cinematic look */
+    display: block !important;
+    object-fit: cover !important;
+    margin: 0 !important;
+    background: #000 !important;
+}
+
+.post-content {
+    padding: 10px 15px !important; /* টেক্সটের জন্য প্যাডিং */
 }
 
 .post-header {
@@ -96,66 +128,24 @@ body {
     align-items: center;
     gap: 12px;
     margin-bottom: 12px;
-    padding-left: 16px !important;        
-    padding-right: 16px !important;
-}
-
-.post-user-pic {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1.5px solid var(--accent);
-    padding: 2px;
-}
-
-/* ক্যাপশন টেক্সটের দুই পাশে স্পেসিং */
-.post-content {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--text-color); 
-    margin-bottom: 15px;
-}
-
-/* ─── POST ACTIONS (বাটন গ্রুপ) ─── */
-.post-actions {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 12px;
-    padding-bottom: 4px;      
-    padding-left: 16px !important;       
-    padding-right: 16px !important;      
-    border-top: 1px solid var(--border-color);
-}
-
-.post-info-meta {
-    display: flex;
-    flex-direction: column;
+    padding-left: 16px;        
+    padding-right: 16px;
+    justify-content: flex-start; /* এটি নিশ্চিত করবে যে সবকিছু বাম পাশ থেকে শুরু হবে */
 }
 
 .post-user-name {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-color);
+    text-align: left; /* লেখা বামে রাখার জন্য */
+    display: block;   /* ব্লক এলিমেন্ট হিসেবে কাজ করবে */
 }
 
-.post-time {
-    font-size: 11px;
-    color: #777;
-}
-
-/* ─── ছবিকে একদম বর্ডারহীন ফুল উইডথ করা ─── */
-#post-display-area .post-image {
-    width: 100% !important;   
-    max-width: 100% !important;  
-    max-height: 80vh;         
-    object-fit: cover;        
-    display: block;
-    border-radius: 0 !important; /* ইমেজ ফ্রেমের কোণা সোজা করা হলো */
-    margin: 12px 0 !important;
-    left: 0 !important;
-    right: 0 !important;
+/* যদি ইউজারনেম এবং সময় পাশাপাশি থাকে, তবে তাদের কন্টেইনার ফিক্স করো */
+.post-info-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* বামে এলাইন করার জন্য */
 }
 
 /* ─── লাইক, কমেন্ট, শেয়ার বাটন ─── */
@@ -177,13 +167,6 @@ body {
     font-size: 20px;         
 }
 
-/* বাটনের ওপর মাউস বা টাচ রাখলে হালকা ব্যাকগ্রাউন্ড হবে */
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #00e5ff !important; 
-}
-
-/* Animations */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -334,33 +317,13 @@ input:checked + .slider:before {
 @keyframes rotateBubbles { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes keepUpright { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
 
-/* Settings Inner Styles for White Mode */
 #settings-page div, #about-page div, #privacy-page div {
     color: var(--text-color);
 }
 
-/* ─── কোডপেন ও মোবাইল ভিউপোর্ট ফিক্স (রিলস সেকশন) ─── */
-#reels-section {
-    position: fixed;
-    top: 0;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    background: #000000 !important;
-    z-index: 5000;
-    overflow-y: scroll !important;
-    scroll-snap-type: y mandatory;
-    margin: 0 !important;
-    padding: 0 !important;
-    scrollbar-width: none; 
-}
-#reels-section::-webkit-scrollbar {
-    display: none; 
-}
-
+/* ─── নিখুঁত রিলস কার্ড ডিজাইন (সব বর্ডার ও শ্যাডো রিমুভড) ─── */
 .reel-card {
-    width: 100vw !important;
+    width: 100% !important;
     height: 100vh !important;              
     height: 100dvh !important;             
     scroll-snap-align: start;
@@ -369,10 +332,13 @@ input:checked + .slider:before {
     overflow: hidden;
     margin: 0 !important;
     padding: 0 !important;
-    left: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-.reel-video {
+.reel-video,
+#reels-section video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover; 
@@ -380,47 +346,202 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
-}
-
-/* ─── বাটন প্যানেল ফিক্স (শেয়ার বাটন ও ওপরে তোলা) ─── */
-.reel-actions {
-    position: absolute;
-    right: 15px !important;
-    bottom: 80px !important; /* নিচ থেকে ওপরে তোলা হলো যেন কোডপেন বারে না ঢাকে */
-    display: flex;
-    flex-direction: column;
-    gap: 25px; 
-    align-items: center;
-    color: white;
-    z-index: 9999 !important; /* ভিডিওর ওপরে ভাসমান থাকবে */
-}
-
-/* আইকন ও টেক্সটের এলাইনমেন্ট */
-.reel-actions > div, .reel-actions .action-item {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer;
-}
-
-.reel-actions i {
-    font-size: 28px !important; 
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
-}
-
-.reel-actions span {
-    font-size: 11px;
-    margin-top: 5px;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .reel-info {
     position: absolute;
-    bottom: 30px;
+    bottom: 20px;
     left: 15px;
-    z-index: 9999 !important;
+    z-index: 10;
     color: white;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.reel-actions {
+    position: absolute;
+    right: 15px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    color: white;
+    z-index: 10;
+}
+
+/* ─── গ্লোবাল ফিড ফিক্স - নিখুঁত ফুল উইডথ ─── */
+#post-display-area .post-card {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+#post-display-area .post-card {
+    margin: 15px 0 !important;        /* দুই পাশ থেকে মার্জিন সরিয়ে দিলাম */
+    width: 100% !important;           /* পুরো ১০০% জায়গা নেবে */
+    border-radius: 0 !important;      /* ফিডের জন্য চাইলে জিরো রেডিয়াস */
+    box-sizing: border-box !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* ─── রিলস পার্মানেন্ট ডার্ক মোড সুনির্দিষ্ট লক (নিখুঁত ওভাররাইড) ─── */
+#reels-section h4,
+#reels-section p,
+#reels-section span,
+#reels-section i {
+    color: #ffffff !important;
+}
+
+/* লাইক হার্ট রেড */
+#reels-section .fa-heart,
+#reels-section .fa-heart i {
+    color: #ff4444 !important;
+}
+
+/* ডানপাশের অ্যাকশন এরিয়া গ্লাস মরফিজম ইফেক্ট */
+#reels-section div[style*="bottom: 120px"], 
+#reels-section div[style*="right: 20px"] {
+    background: rgba(30, 30, 30, 0.5) !important;
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* গ্লোবাল ফিড ইউজারনেম ফিক্স */
+.post-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important; /* হেডার যেন পুরো জায়গা নেয় */
+}
+
+.post-info-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    flex-grow: 1; /* এটি নিশ্চিত করবে মেটা টেক্সট জায়গা দখল করছে না */
+}
+
+.post-user-name {
+    display: block !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+
+/* ─── রিলস কমেন্ট সেকশন স্থায়ী সাদা (Permanent Light Mode) সুনির্দিষ্ট ফিক্স ─── */
+#reels-section div[id^="reel-comment-box-"] {
+    background: #ffffff !important; /* সবসময় ধবধবে সাদা ব্যাকগ্রাউন্ড */
+    border-top: 1px solid #e0e0e0 !important;
+}
+
+/* রিলস কমেন্ট হেডার ("মন্তব্যসমূহ") কালার লক */
+#reels-section div[id^="reel-comment-box-"] span:first-child {
+    color: #1a1a1a !important; 
+    font-weight: bold !important;
+}
+
+/* ডানপাশের ক্লোজ (×) বাটন সবসময় স্পষ্ট লাল থাকবে */
+#reels-section div[id^="reel-comment-box-"] span[onclick*="toggleInlineCommentBox"] {
+    color: #ff4444 !important;
+    opacity: 1 !important;
+    font-size: 24px !important;
+}
+
+/* রিলসের কমেন্ট টেক্সট (p) সবসময় স্পষ্ট কালো */
+[id^="reel-comments-list-"] p {
+    color: #1a1a1a !important; 
+}
+
+/* রিলস কমেন্টের ইউজারনেম (@username) স্থায়ী হোয়াইট মোডে ডিপ ব্লু */
+[id^="reel-comments-list-"] span {
+    color: #0088cc !important; 
+}
+
+/* রিলস কমেন্ট ইনপুট বক্স থিম */
+#reels-section div[id^="reel-comment-box-"] input {
+    background: #f1f3f4 !important; /* হালকা গ্রে ব্যাকগ্রাউন্ড */
+    color: #1a1a1a !important; /* টাইপ করার লেখা সবসময় কালো */
+    border: 1px solid #dcdcdc !important;
+}
+
+/* ইনপুট প্লেসহোল্ডার কালার */
+#reels-section div[id^="reel-comment-box-"] input::placeholder {
+    color: #777777 !important;
+}
+
+/* কমেন্টের সাবমিট এরো পেপার-প্লেন বাটন আইকন কালার */
+#reels-section div[id^="reel-comment-box-"] button i {
+    color: #000000 !important; /* সাদা বাটন ব্যাকগ্রাউন্ডের ওপর কালো আইকন */
+}
+
+/* রিলস কমেন্টের ভেতরের প্রোফাইল রাউন্ডেড আইকন প্লেসহোল্ডার */
+[id^="reel-comments-list-"] div[style*="background:rgba(0,229,255,0.15)"] {
+    background: #e0e0e0 !important;
+    color: #0088cc !important;
+    border: 1px solid #dcdcdc !important;
+}
+
+/* ─── রিলস ফলো বাটন ডিজাইন ─── */
+.reel-follow-btn {
+    background: transparent !important;
+    color: #00e5ff !important; /* নিয়ন ব্লু থিম */
+    border: 1px solid #00e5ff !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+/* হোভার বা অ্যাক্টিভ স্টেট ইফেক্ট */
+.reel-follow-btn:active {
+    background: rgba(0, 229, 255, 0.1) !important;
+    transform: scale(0.95);
+}
+
+/* অলরেডি ফলো করা থাকলে সেই অবস্থার জন্য */
+.reel-follow-btn.following {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+#post-display-area .post-card {
+    width: 100% !important;
+    overflow: hidden !important;
+    background: var(--card-bg) !important;
+    border-radius: 0 !important;
+    margin: 15px 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+
+    /* অটো ফ্রেম */
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+}
+
+#post-display-area .post-card img,
+#post-display-area .post-image,
+.post-card img,
+.post-image {
+    width: 100% !important;
+    height: auto !important; /* ছবির আসল height অনুযায়ী */
+    max-width: 100% !important;
+
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+
+    /* অরিজিনাল রেশিও বজায় থাকবে */
+    object-fit: contain !important;
+    background: transparent !important;
 }
