@@ -545,3 +545,24 @@ input:checked + .slider:before {
     object-fit: contain !important;
     background: transparent !important;
 }
+/* ─── মেসেঞ্জার চ্যাট ইনপুট বক্স ফিক্স ─── */
+#chat-p2-box {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: var(--card-bg) !important;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 6000 !important; /* স্ক্রিনের ওপরে ভেসে থাকার জন্য */
+    
+    /* নিচ থেকে ২৫ পিক্সেল উপরে পুশ করার ম্যাজিক লাইন */
+    padding-bottom: max(25px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+}
+
+/* মেসেজের লিস্ট কন্টেইনার যেন ইনপুট বক্সের নিচে ঢাকা না পড়ে */
+#chat-messages-container {
+    padding-bottom: 90px !important; /* ইনপুট বক্সের হাইট অনুযায়ী স্পেস */
+}
+
+
