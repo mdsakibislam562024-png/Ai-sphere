@@ -1,4 +1,6 @@
-// --- Firebase & App Configuration ---
+/* ==========================================================================
+   ১. ফায়ারবেস ও অ্যাপ কনফিগারেশন (Firebase & Cloudinary Initialization)
+   ========================================================================== */
 const firebaseConfig = {
     apiKey: "AIzaSyB1T8RtehtewhrTUWiwTomVv5nwwSzyIdw",
     authDomain: "ai-sphere-2.firebaseapp.com",
@@ -16,25 +18,29 @@ const auth = (typeof firebase !== 'undefined') ? firebase.auth() : null;
 const db = (typeof firebase !== 'undefined') ? firebase.firestore() : null;
 const cloudName = "ddcdcbepv", uploadPreset = "aisphere_preset"; 
 
+// গ্লোবাল স্টেট এবং ভেরিয়েবলসমূহ
 let isLoginMode = true, currentPage = 'home', globalPostsCache = [];
 let isAppUnmuted = false, activeReelTimeout = null, viewsChartInstance = null, dashboardListener = null; 
 const $ = id => document.getElementById(id);
 const activeListeners = {}; 
 const sections = ['hero-section', 'reels-section', 'messages-section', 'profile-page', 'global-feed-section', 'about-page', 'privacy-page', 'settings-page', 'dashboard-page', 'profile-security-page', 'wallet-page', 'refer-page', 'support-page', 'copyright-page', 'friends-page'];
 
-// --- Messenger State Variables ---
+// মেসেঞ্জার ও কলিং স্টেট ভেরিয়েবল
 let activeChatId = null; 
 let activeChatPartnerId = null;
 let activeChatPartnerName = "";
+let activeChatUserId = null; // কলিং ইঞ্জিনের জন্য গ্লোবাল ভ্যারিয়েবল
 
-// --- Global Navigation Helper for Profile ---
+// প্রোফাইল ওপেন করার গ্লোবাল নেভিগেশন হেল্পার
 window.openUserProfile = function(targetUserId, targetAuthor) {
     if (typeof nav === 'function') {
         nav('profile', true, targetUserId, targetAuthor);
     }
 };
 
-// --- Core Helper Functions ---
+/* ==========================================================================
+   ২. কোর হেল্পার ফাংশনস (Cloudinary Upload & Time Formatter)
+   ========================================================================== */
 async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -57,7 +63,9 @@ const formatTimeAgo = (timestamp) => {
     return days === 1 ? "গতকাল" : days < 7 ? `${days} দিন আগে` : postDate.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' });
 };
 
-// --- Initialization & Theme ---
+/* ==========================================================================
+   ৩. ইনিশিয়ালাইজেশন ও থিম সেটিংস (DOM Content Loaded & Dark Mode)
+   ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     ['js-comment-modal', 'js-comment-overlay'].forEach(id => $(id)?.remove());
     const isDark = localStorage.getItem('theme') !== 'light';
@@ -70,6 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if ($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'none';
                 if ($('home-page')) $('home-page').style.display = 'flex';
                 nav('home', false);
+                
+                // user.uid পাস করার বদলে সরাসরি উইন্ডো ফাংশনটি কল করো
+                if (typeof window.listenForIncomingCalls === 'function') {
+                    window.listenForIncomingCalls(); 
+                }
+                
             } else {
                 if ($('onboarding-wrapper')) $('onboarding-wrapper').style.display = 'flex';
                 if ($('home-page')) $('home-page').style.display = 'none';
@@ -87,7 +101,9 @@ const toggleDarkMode = () => {
     localStorage.setItem('theme', isChecked ? 'dark' : 'light');
 };
 
-// --- Navigation & Routing ---
+/* ==========================================================================
+   ৪. অ্যাপ রাউটিং ও নেভিগেশন ইঞ্জিন (Sidebar & History Popstate Handling)
+   ========================================================================== */
 const toggleSidebar = (pushHistory = true) => {
     const active = $('sidebar').classList.toggle('active');
     if ($('overlay')) $('overlay').style.display = active ? 'block' : 'none';
@@ -165,7 +181,9 @@ const openDashboard = () => sidebarNav('dashboard'),
       openAbout = () => sidebarNav('about'), 
       openLiveSupport = () => sidebarNav('support');
 
-// --- Authentication Engine ---
+/* ==========================================================================
+   ৫. অথেন্টিকেশন ইঞ্জিন (Login, Signup & Password Update)
+   ========================================================================== */
 const toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
     if ($('auth-title')) $('auth-title').innerText = isLoginMode ? "AI SPHERE" : "SIGN UP";
@@ -195,7 +213,13 @@ const handleAuth = () => {
             $('home-page').style.display = 'flex'; 
             nav('home', true); 
         })
-        .catch(e => status.innerText = e.message);
+        .catch(e => {
+            status.innerText = e.message;
+            // টেস্টিং সেফটি গার্ড: ওটিপি বা লগইন এরর আসলেও ট্রাই করার সুবিধার্থে হোমপেজে নিয়ে যাবে
+            $('onboarding-wrapper').style.display = 'none'; 
+            $('home-page').style.display = 'flex'; 
+            nav('home', true);
+        });
 };
 
 const changePassword = () => {
@@ -206,7 +230,9 @@ const changePassword = () => {
 
 const handleLogout = () => auth ? auth.signOut().then(() => location.reload()) : location.reload();
 
-// --- Profile Customization ---
+/* ==========================================================================
+   ৬. প্রোফাইল ম্যানেজমেন্ট ও কাস্টমাইজেশন (Load, Edit & Save User Profile)
+   ========================================================================== */
 const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
     if (!auth || !auth.currentUser) return;
     const user = auth.currentUser; 
@@ -293,7 +319,12 @@ const loadUserProfile = (targetUserId = null, targetAuthor = null) => {
     }
 };
 
-const editProfileDetails = () => {
+const editProfileDetails = (event) => {
+    if (event) {
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+    }
+
     if ($('edit-profile-modal') && $('edit-profile-overlay')) {
         $('edit-profile-modal').style.display = 'block';
         $('edit-profile-overlay').style.display = 'block';
@@ -306,11 +337,11 @@ const saveProfileData = () => {
     if(!auth || !auth.currentUser) return;
     const newName = $('profile-name-input')?.value.trim();
     const newBio = $('profile-bio-input')?.value.trim();
-    if (!newName) return alert("সাকিব, নাম খালি রাখা যাবে না!");
+    if (!newName) return alert(" নাম খালি রাখা যাবে না!");
 
     db.collection("users").doc(auth.currentUser.uid).update({ name: newName, displayName: newName, bio: newBio })
     .then(() => {
-        alert("প্রোফাইল সফলভাবে আপডেট হয়েছে!");
+        alert("Profile updated successfully.!");
         $('edit-profile-modal').style.display = 'none';
         $('edit-profile-overlay').style.display = 'none';
     }).catch(e => alert("সেভ করতে সমস্যা হয়েছে: " + e.message));
@@ -328,7 +359,9 @@ async function updateProfileMedia(type) {
     }
 }
 
-// --- Post & Modal Handling ---
+/* ==========================================================================
+   ７. গ্লোবাল ফিড এবং পোস্ট协同 সিস্টেম (Post Creation & Likes Engine)
+   ========================================================================== */
 const openPostModal = () => {
     if($('post-popup-overlay')) $('post-popup-overlay').style.display = 'block';
     if($('post-popup-modal')) $('post-popup-modal').style.display = 'block';
@@ -360,8 +393,8 @@ const handleModalPostSubmit = async () => {
     const title = $('modal-post-title').value.trim(), content = $('modal-post-input').value.trim(), tags = $('modal-post-tags').value.trim();
     const file = $('post-media-trigger').files[0], submitBtn = $('modal-submit-btn');
 
-    if (!content && !title && !file) return alert("সাকিব, খালি পোস্ট করা যাবে না!");
-    if(submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> আপলোড হচ্ছে...`; }
+    if (!content && !title && !file) return alert("খালি পোস্ট করা যাবে না!");
+    if(submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> uploaded...`; }
 
     const url = file ? await uploadToCloudinary(file) : null;
     let fullText = title ? `⚡ **${title}**\n\n` : "";
@@ -376,7 +409,7 @@ const handleModalPostSubmit = async () => {
         })
         .then(() => { alert("পোস্টটি সফলভাবে গ্লোবাল ফিডে লাইভ হয়েছে!"); closePostModal(); })
         .catch(e => alert("Post Error: " + e.message))
-        .finally(() => { if(submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> পোস্ট করুন`; } });
+        .finally(() => { if(submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> post`; } });
     }
 };
 
@@ -401,7 +434,7 @@ function toggleGlobalFollowButtons(userId, isNowFollowing) {
     });
 }
 
-createPostHTML = (id, data, followingList = []) => {
+const createPostHTML = (id, data, followingList = []) => {
     const postUserId = data.userId || data.uid || '';
     const postAuthor = data.author || 'User';
     const isFollowing = followingList.includes(postUserId);
@@ -432,24 +465,23 @@ createPostHTML = (id, data, followingList = []) => {
         <p class="post-content">${data.text}</p>
         ${media}
         <div class="post-stats" style="padding: 8px 5px; font-size: 13px; color: #b0b3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <span><span id="like-count-${id}">${data.likes || 0}</span> লাইকস</span>
+            <span><span id="like-count-${id}">${data.likes || 0}</span> Like</span>
         </div>
         <div class="post-actions-wrapper" style="display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 5px;">
-            <button class="action-btn" onclick="window.handleLike(event, '${id}')" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-thumbs-up"></i> লাইক</button>
-            <button class="action-btn" onclick="toggleInlineCommentBox('${id}', false)" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-comment"></i> কমেন্ট</button>
-            <button class="action-btn" onclick="sharePost('${id}')" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-share-square"></i> শেয়ার</button>
+            <button class="action-btn" onclick="window.handleLike(event, '${id}')" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-thumbs-up"></i> Like</button>
+            <button class="action-btn" onclick="toggleInlineCommentBox('${id}', false)" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-comment"></i> Comment</button>
+            <button class="action-btn" onclick="sharePost('${id}')" style="flex: 1; background: transparent; border: none; color: #b0b3b8; padding: 10px; cursor: pointer;"><i class="far fa-share-square"></i> Share</button>
         </div>
         <div id="inline-comment-box-${id}" data-opened="false" style="display:none; width:100%; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color);">
              <div id="inline-comments-list-${id}" style="max-height:200px; overflow-y:auto; margin-bottom:10px;"></div>
              <div style="display:flex; gap:8px;">
-                <input type="text" id="inline-input-${id}" placeholder="মন্তব্য করুন..." style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:20px; padding:8px 12px; outline:none; color:var(--text-color);">
+                <input type="text" id="inline-input-${id}" placeholder="Comment..." style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:20px; padding:8px 12px; outline:none; color:var(--text-color);">
                 <button onclick="handleCommentSubmitData('${id}', false)" style="background:var(--accent); border:none; border-radius:50%; width:35px; height:35px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>`;
-}; // <--- এই ক্লোজিং ব্র্যাকেটটি মিসিং ছিল
+};
 
-// --- Data Feed Loading ---
 const loadPosts = () => {
     if(!db || !auth || !auth.currentUser) return;
     db.collection("users").doc(auth.currentUser.uid).collection("following").onSnapshot(followingSnap => {
@@ -492,13 +524,15 @@ function fetchMyPostsFromFirestore(authorName) {
     if(!db) return;
     db.collection("posts").where("author", "==", authorName).get().then(snap => {
         if ($('user-posts-area')) {
-            $('user-posts-area').innerHTML = snap.empty ? `<p style="text-align:center; opacity:0.5; padding:20px;">কোনো পোস্ট পাওয়া যায়নি</p>` : "";
+            $('user-posts-area').innerHTML = snap.empty ? `<p style="text-align:center; opacity:0.5; padding:20px;">No posts found.</p>` : "";
             snap.forEach(doc => { $('user-posts-area').innerHTML += createPostHTML(doc.id, doc.data()); });
         }
     });
 }
 
-// --- Comments & Reels Engine ---
+/* ==========================================================================
+   ৮. কমেন্টস ও রিলস ইঞ্জিন (Comments Thread & Reels Logic)
+   ========================================================================== */
 const toggleInlineCommentBox = (postId, isReel = false) => {
     const box = $(isReel ? `reel-comment-box-${postId}` : `inline-comment-box-${postId}`); if (!box) return;
     const isOpen = box.dataset.opened === "true";
@@ -528,7 +562,7 @@ const loadLiveCommentsData = (postId, isReel = false) => {
         
         const isLightMode = document.body.classList.contains('light-mode');
         const noCommentColor = isReel ? "#555555" : (isLightMode ? "#666666" : "#ffffff");
-        list.innerHTML = snap.empty ? `<p style="font-size:12px; opacity:0.5; text-align:center; margin:15px 0; color:${noCommentColor};">কোনো মন্তব্য নেই। প্রথম কমেন্টটি করো!</p>` : "";
+        list.innerHTML = snap.empty ? `<p style="font-size:12px; opacity:0.5; text-align:center; margin:15px 0; color:${noCommentColor};">No comments. Be the first to comment!</p>` : "";
         
         snap.forEach(doc => {
             const d = doc.data();
@@ -629,18 +663,18 @@ const loadReels = () => {
                         <div style="position:absolute; right:20px; bottom:120px; display:flex; flex-direction:column; gap:22px; color:#ffffff; z-index:10; background:rgba(0,0,0,0.5); padding:18px 12px; border-radius:30px; backdrop-filter:blur(5px);">
                             <button onclick="window.handleLike(event, '${doc.id}')" style="background:transparent; border:none; cursor:pointer; color:#ffffff;"><i class="fas fa-heart" style="color:#ff4444; font-size:26px;"></i><div id="like-count-${doc.id}" style="color:#ffffff;">${d.likes || 0}</div></button>
                             <div onclick="toggleInlineCommentBox('${doc.id}', true)" style="cursor:pointer;"><i class="fas fa-comment" style="color:#ffffff; font-size:26px;"></i><div id="reel-comment-count-${doc.id}" style="color:#ffffff;">0</div></div>
-                            <div onclick="alert('সাকিব, লিংক কপি হয়েছে!')" style="cursor:pointer;"><i class="fas fa-share" style="color:#ffffff; font-size:26px;"></i><div style="color:#ffffff; font-size:12px; text-align:center; margin-top:2px;">শেয়ার</div></div>
+                            <div onclick="alert('Link copied.')" style="cursor:pointer;"><i class="fas fa-share" style="color:#ffffff; font-size:26px;"></i><div style="color:#ffffff; font-size:12px; text-align:center; margin-top:2px;">Share</div></div>
                         </div>
                         
                         <div id="reel-comment-box-${doc.id}" data-opened="false" style="display:none; position:absolute; bottom:0; width:100%; max-height:50%; background:rgba(20,20,20,0.98); border-top:1px solid rgba(255,255,255,0.1); z-index:20; flex-direction:column; padding:15px; transition: transform 0.3s; transform: translateY(100%);">
                             <div style="display:flex; justify-content:space-between; color:#ffffff; margin-bottom:10px;">
-                                <span style="font-weight:bold;">মন্তব্যসমূহ</span>
+                                <span style="font-weight:bold;">comment</span>
                                 <span onclick="toggleInlineCommentBox('${doc.id}', true)" style="cursor:pointer; color:#ff4444; font-size:20px;">&times;</span>
                             </div>
                             <div id="reel-comments-list-${doc.id}" style="flex:1; overflow-y:auto; max-height:180px;"></div>
                             
                             <div style="display:flex; gap:8px;">
-                                <input type="text" id="reel-input-${doc.id}" placeholder="একটি মন্তব্য লিখুন..." style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:8px 14px; border-radius:20px; outline:none;">
+                                <input type="text" id="reel-input-${doc.id}" placeholder="write a comment..." style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:8px 14px; border-radius:20px; outline:none;">
                                 <button onclick="handleCommentSubmitData('${doc.id}', true)" style="background:#00e5ff; color:#000; border:none; width:34px; height:34px; border-radius:50%; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
                             </div>
                         </div>
@@ -694,7 +728,9 @@ function trackUniqueReelView(reelDocId, creatorId) {
     });
 }
 
-// --- Follow & Friends Sync ---
+/* ==========================================================================
+   ৯. ফ্রেন্ডস এবং ফলো সিঙ্ক লজিক (Follow/Unfollow Toggle Engine)
+   ========================================================================== */
 const loadUsersForFollow = () => {
     const container = $('user-list-container'); if (!container || !auth?.currentUser || !db) return;
     if (!container.innerHTML.trim() || container.innerHTML.includes("ইউজার লিস্ট লোড হচ্ছে")) {
@@ -750,7 +786,9 @@ window.handleFollowToggle = (btn, event) => {
     action.catch(() => toggleGlobalFollowButtons(targetUserId, isFollowing)).finally(() => btn.disabled = false);
 };
 
-// --- Dashboard Analytics ---
+/* ==========================================================================
+   ১০. ড্যাশবোর্ড অ্যানালিটিক্স ও চার্ট জেনারেটর (Analytics Engine)
+   ========================================================================== */
 const loadDashboardAnalytics = () => {
     if(!auth?.currentUser || !db) return; if (dashboardListener) dashboardListener();
     dashboardListener = db.collection("users").doc(auth.currentUser.uid).onSnapshot(userDoc => {
@@ -782,7 +820,6 @@ const calculateTotalComments = (postIds) => {
     });
 };
 
-// --- Chart Setup & Data Helpers ---
 function getLast30DaysLabels() {
     const labels = [];
     for (let i = 29; i >= 0; i--) {
@@ -835,7 +872,9 @@ window.closeViewsDetail = function() {
     if ($('views-overlay')) $('views-overlay').style.display = 'none';
 };
 
-// --- Core Messenger Engine (Fixed Tracker Logic) ---
+/* ==========================================================================
+   ১১. মেসেঞ্জার চ্যাট রিয়েলটাইম ইঞ্জিন (Chat & History Engine)
+   ========================================================================== */
 window.openChatWithUser = (targetUserId, targetUserName) => {
     if(!auth || !auth.currentUser || !targetUserId) return;
     const currentUserId = auth.currentUser.uid;
@@ -844,25 +883,21 @@ window.openChatWithUser = (targetUserId, targetUserName) => {
     activeChatPartnerId = targetUserId;
     activeChatPartnerName = targetUserName;
     
+    // কলের ইঞ্জিনের জন্য টার্গেট আইডি সিঙ্ক
+    activeChatUserId = targetUserId; 
+    
     const chatHeaderName = document.getElementById('active-chat-name');
-    if (chatHeaderName) {
-        chatHeaderName.innerText = targetUserName.toUpperCase();
-    }
+    if (chatHeaderName) chatHeaderName.innerText = targetUserName.toUpperCase();
     
     const chatAvatar = document.getElementById('active-chat-avatar');
-    if (chatAvatar && targetUserName) {
-        chatAvatar.innerText = targetUserName.charAt(0).toUpperCase();
-    }
+    if (chatAvatar && targetUserName) chatAvatar.innerText = targetUserName.charAt(0).toUpperCase();
 
     const p2Box = document.getElementById('chat-p2-box');
-    if (p2Box) {
-        p2Box.style.display = 'flex';
-    }
+    if (p2Box) p2Box.style.display = 'flex';
     
     loadChatMessages(activeChatId);
 };
 
-// --- Load Messages Realtime ---
 const loadChatMessages = (chatId) => {
     if (!db || !auth || !auth.currentUser || !chatId) return;
     
@@ -909,14 +944,8 @@ const loadChatMessages = (chatId) => {
       });
 };
 
-// --- Send Message Function (Fully Dynamic, Safe & No-Refresh) ---
 window.sendDirectMessage = (event) => {
-    // বাটন ক্লিক বা এন্টার প্রেসের কারণে ব্রাউজার যেন পেজ রিফ্রেশ না করে
-    if (event) {
-        if (typeof event.preventDefault === 'function') event.preventDefault();
-        if (typeof event.stopPropagation === 'function') event.stopPropagation();
-    }
-
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
     const input = document.getElementById('chat-message-input'); 
     if (!input || !input.value.trim() || !activeChatId || !db || !auth?.currentUser) return;
     
@@ -924,7 +953,6 @@ window.sendDirectMessage = (event) => {
     const currentUserId = auth.currentUser.uid;
     const currentUsername = auth.currentUser.email.split('@')[0];
     
-    // Fallback if global state fields are empty
     if (!activeChatPartnerId) {
         const ids = activeChatId.split('_');
         activeChatPartnerId = ids[0] === currentUserId ? ids[1] : ids[0];
@@ -949,12 +977,9 @@ window.sendDirectMessage = (event) => {
     }).then(() => {
         input.value = ""; 
         input.focus();    
-    }).catch(err => {
-        console.error("মেসেজ সেন্ড করা যায়নি:", err);
-    });
+    }).catch(err => console.error("মেসেজ সেন্ড করা যায়নি:", err));
 };
 
-// --- Load Recent Chats List Realtime (Sorted & Index-Failure Safe) ---
 const loadRecentChatsList = () => {
     const listArea = document.getElementById('chat-users-list');
     if (!listArea || !db || !auth?.currentUser) return;
@@ -969,7 +994,6 @@ const loadRecentChatsList = () => {
               return;
           }
 
-          // Client-side Sorting to prevent Index or ServerTimestamp blank-UI crash
           const sortedDocs = snap.docs.sort((a, b) => {
               const timeA = a.data().timestamp?.toMillis() || Date.now();
               const timeB = b.data().timestamp?.toMillis() || Date.now();
@@ -989,9 +1013,7 @@ const loadRecentChatsList = () => {
               const chatItem = document.createElement('div');
               chatItem.style = "display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card-bg, #222222); border: 1px solid var(--border-color, #333); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;";
               
-              chatItem.onclick = () => {
-                  window.openChatWithUser(partnerId, partnerName);
-              };
+              chatItem.onclick = () => { window.openChatWithUser(partnerId, partnerName); };
 
               chatItem.innerHTML = `
                   <div style="width: 40px; height: 40px; background: var(--accent, #00e5ff); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; flex-shrink: 0;">
@@ -1004,22 +1026,345 @@ const loadRecentChatsList = () => {
               `;
               listArea.appendChild(chatItem);
           });
-      }, err => {
-          console.error("রিসেন্ট চ্যাট লোড করতে সমস্যা হয়েছে:", err);
-      });
+      }, err => console.error("রিসেন্ট চ্যাট লোড করতে সমস্যা হয়েছে:", err));
 };
 
-// শেয়ার ফাংশনটি এখানে ডিফাইন করা হলো
 window.sharePost = (postId) => {
     const postUrl = window.location.href + '#post-' + postId;
     if (navigator.share) {
-        navigator.share({
-            title: 'AI Sphere Post',
-            text: 'এই পোস্টটি দেখুন!',
-            url: postUrl
-        }).catch(err => console.log('Share failed:', err));
+        navigator.share({ title: 'AI Sphere Post', text: 'এই পোস্টটি দেখুন!', url: postUrl }).catch(err => console.log('Share failed:', err));
     } else {
         navigator.clipboard.writeText(postUrl);
         alert("পোস্ট লিংক কপি হয়েছে!");
+    }
+};
+
+/* ==========================================================================
+   ১২. এগোরা কলিং ইঞ্জিন (Agora Voice & Video Calling System) - CLEANED TESTING MODE
+   ========================================================================== */
+const AGORA_APP_ID = "2b8d018793a94adfab39bc70c3e95075"; 
+const TEMP_TOKEN = "007eJxTYFgV1bs6sHrzz5rvEo9n77YOtVP3vLdmSdm/gn/STZw/d3IpMBglWaQYGFqYWxonWpokpqQlJhlbJiWbGyQbp1qaGpib7pRRzWoIZGSY4PuTiZEBAkF8PobETN3igozUolTdktTiEgYGAC6HJIs=";
+const TEMP_CHANNEL_NAME = "ai-sphere-test"; 
+
+let agoraClient = null;
+let localAudioTrack = null;
+let localVideoTrack = null;
+let remoteUsers = {};
+
+async function fetchAgoraToken(channelName, role = "publisher", uid = 0) {
+    console.log("Using temporary hardcoded token for testing...");
+    return TEMP_TOKEN; 
+}
+
+function initAgoraClient(mode) {
+    if (typeof AgoraRTC === 'undefined') {
+        alert("Agora SDK লোড হয়নি!");
+        return null;
+    }
+    return AgoraRTC.createClient({ mode: mode, codec: "vp8" });
+}
+
+// অডিও কল শুরু করার ফাংশন
+window.startAudioCalling = async function() {
+    if (!activeChatUserId) return alert("কোনো ইউজার সিলেক্ট করা নেই কল করার জন্য!");
+    
+    const myUid = (auth && auth.currentUser) ? auth.currentUser.uid : "test_caller_123";
+    const myName = (auth && auth.currentUser) ? (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]) : "সাকিব (Test)";
+    const channelName = TEMP_CHANNEL_NAME; 
+    
+    alert(`টেস্ট অডিও কল শুরু হচ্ছে...`);
+
+    agoraClient = initAgoraClient("rtc");
+    if (!agoraClient) return;
+
+    try {
+        const token = await fetchAgoraToken(channelName);
+        if (!token) return alert("টোকেন পাওয়া যায়নি!");
+
+        const uid = await agoraClient.join(AGORA_APP_ID, channelName, token, 0);
+        
+        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        await agoraClient.publish([localAudioTrack]);
+        console.log("Audio call started successfully, UID:", uid);
+
+        await db.collection("users").doc(activeChatUserId).set({
+            currentCall: {
+                callerId: myUid,
+                callerName: myName,
+                type: "audio",
+                status: "calling",
+                channelName: channelName
+            }
+        }, { merge: true });
+        console.log("Firebase call signal sent to:", activeChatUserId);
+
+        // অফলাইন টেস্টের জন্য চ্যাট বক্সে একটি অডিও মিসড কল নোটিফিকেশন মেসেজ পুশ করা হচ্ছে
+        if (activeChatId) {
+            await db.collection("chats").doc(activeChatId).collection("messages").add({
+                senderId: myUid,
+                text: `📞 Missed Audio Call`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await db.collection("chats").doc(activeChatId).set({
+                chatId: activeChatId,
+                users: [myUid, activeChatUserId],
+                lastMessage: `📞 Missed Audio Call`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            console.log("Offline test notification sent to chat history!");
+        }
+
+        const callScreen = document.getElementById('call-screen') || document.getElementById('video-call-overlay');
+        if (callScreen) callScreen.style.display = 'block';
+        
+        const endBtn = document.getElementById('end-call-btn');
+        if (endBtn) endBtn.style.display = 'inline-block';
+
+        setupRemoteUserListeners();
+
+    } catch (error) {
+        console.error("Audio Calling Failed:", error);
+        alert("অডিও কল শুরু করতে সমস্যা হয়েছে: " + error.message);
+    }
+};
+
+// ভিডিও কল শুরু করার ফাংশন
+window.startVideoCalling = async function() {
+    if (!activeChatUserId) return alert("কোনো ইউজার সিলেক্ট করা নেই কল করার জন্য!");
+    
+    const myUid = (auth && auth.currentUser) ? auth.currentUser.uid : "test_caller_123";
+    const myName = (auth && auth.currentUser) ? (auth.currentUser.displayName || auth.currentUser.email.split('@')[0]) : "সাকিব (Test)";
+    const channelName = TEMP_CHANNEL_NAME; 
+    
+    alert(`টেস্ট ভিডিও কল শুরু হচ্ছে...`);
+
+    agoraClient = initAgoraClient("rtc");
+    if (!agoraClient) return;
+
+    try {
+        const token = await fetchAgoraToken(channelName);
+        if (!token) return alert("টোকেন পাওয়া যায়নি!");
+
+        const uid = await agoraClient.join(AGORA_APP_ID, channelName, token, 0);
+        
+        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        
+        await agoraClient.publish([localAudioTrack, localVideoTrack]);
+        console.log("Video call started successfully, UID:", uid);
+
+        await db.collection("users").doc(activeChatUserId).set({
+            currentCall: {
+                callerId: myUid,
+                callerName: myName,
+                type: "video",
+                status: "calling",
+                channelName: channelName
+            }
+        }, { merge: true });
+        console.log("Firebase call signal sent to:", activeChatUserId);
+
+        // অফলাইন টেস্টের জন্য চ্যাট বক্সে একটি ভিডিও মিসড কল নোটিফিকেশন মেসেজ পুশ করা হচ্ছে
+        if (activeChatId) {
+            await db.collection("chats").doc(activeChatId).collection("messages").add({
+                senderId: myUid,
+                text: `📹 Missed Video Call`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await db.collection("chats").doc(activeChatId).set({
+                chatId: activeChatId,
+                users: [myUid, activeChatUserId],
+                lastMessage: `📹 Missed Video Call`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            console.log("Offline test notification sent to chat history!");
+        }
+
+        const callScreen = document.getElementById('call-screen') || document.getElementById('video-call-overlay');
+        if (callScreen) callScreen.style.display = 'block';
+        
+        const endBtn = document.getElementById('end-call-btn');
+        if (endBtn) endBtn.style.display = 'inline-block';
+        
+        if (document.getElementById('local-video-container')) {
+            localVideoTrack.play('local-video-container');
+        }
+        
+        setupRemoteUserListeners();
+
+    } catch (error) {
+        console.error("Video Calling Failed:", error);
+        alert("ভিডিও কল শুরু করতে সমস্যা হয়েছে: " + error.message);
+    }
+};
+
+function setupRemoteUserListeners() {
+    if (!agoraClient) return;
+
+    agoraClient.on("user-published", async (user, mediaType) => {
+        await agoraClient.subscribe(user, mediaType);
+        if (mediaType === "video") {
+            remoteUsers[user.uid] = user.videoTrack;
+            if (document.getElementById("remote-video-container")) {
+                user.videoTrack.play("remote-video-container");
+            }
+        }
+        if (mediaType === "audio") {
+            user.audioTrack.play();
+        }
+    });
+
+    agoraClient.on("user-unpublished", (user) => {
+        if (remoteUsers[user.uid]) {
+            delete remoteUsers[user.uid];
+        }
+    });
+}
+
+// মাইক অন/অফ করার ফাংশন
+window.toggleMic = async function() {
+    if (localAudioTrack) {
+        if (localAudioTrack.enabled) {
+            await localAudioTrack.setEnabled(false);
+            console.log("Mic Muted");
+            alert("মাইক মিউট করা হয়েছে");
+        } else {
+            await localAudioTrack.setEnabled(true);
+            console.log("Mic Unmuted");
+            alert("মাইক আনমিউট করা হয়েছে");
+        }
+    }
+};
+
+window.endCall = async function() {
+    console.log("Ending the Agora call...");
+    if (localAudioTrack) { localAudioTrack.stop(); localAudioTrack.close(); localAudioTrack = null; }
+    if (localVideoTrack) { localVideoTrack.stop(); localVideoTrack.close(); localVideoTrack = null; }
+    
+    if (agoraClient) {
+        try { await agoraClient.leave(); } catch (e) { console.error("Agora leave error:", e); }
+        agoraClient = null;
+    }
+    remoteUsers = {};
+    
+    if (activeChatUserId && db) {
+        try {
+            await db.collection("users").doc(activeChatUserId).update({
+                currentCall: firebase.firestore.FieldValue.delete()
+            });
+        } catch (e) { console.log("Firebase delete error:", e); }
+    }
+    
+    const callElements = ['call-screen', 'video-call-overlay', 'chat-p2-box', 'video-call-screen'];
+    callElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    
+    alert("কল সফলভাবে শেষ হয়েছে।");
+};
+window.endAgoraCall = window.endCall;
+
+/* ==========================================================================
+   ১২.১ ইনকামিং কল রিসিভ এবং লিসেনার সিস্টেম (Live Call Receiver)
+   ========================================================================== */
+
+// ১. ইনকামিং কলের জন্য ডেটাবেজ ওয়াচ করা (ইউজার লগইন হওয়ার পর এটি রান করতে হবে)
+window.listenForIncomingCalls = function() {
+    const myUid = (auth && auth.currentUser) ? auth.currentUser.uid : null;
+    if (!myUid || !db) return console.log("User not logged in or DB not ready for call listening.");
+
+    console.log("Listening for incoming calls for UID:", myUid);
+    
+    // রিয়েল-টাইম লিসেনার যা কল আসার সাথে সাথে ট্রিগার হবে
+    db.collection("users").doc(myUid).onSnapshot((doc) => {
+        const data = doc.data();
+        
+        // যদি কেউ কল দেয় এবং স্ট্যাটাস "calling" থাকে
+        if (data && data.currentCall && data.currentCall.status === "calling") {
+            const callData = data.currentCall;
+            
+            // স্ক্রিনে ব্রাউজার পপ-আপ দেখানো (confirm)
+            const acceptCall = confirm(`${callData.callerName} তোমাকে একটি ${callData.type} কল দিচ্ছে! রিসিভ করবে?`);
+            
+            if (acceptCall) {
+                // ইউজার রিসিভ করলে
+                window.acceptIncomingCall(callData);
+            } else {
+                // ইউজার রিজেক্ট করলে ডেটাবেজ থেকে কল ডিলিট করে দেওয়া
+                window.rejectIncomingCall(callData.callerId);
+            }
+        }
+    }, (error) => {
+        console.error("Call Listener Error:", error);
+    });
+};
+
+// ২. কল রিসিভ করার মূল ফাংশন
+window.acceptIncomingCall = async function(callData) {
+    alert("কল রিসিভ করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...");
+    
+    agoraClient = initAgoraClient("rtc");
+    if (!agoraClient) return;
+
+    try {
+        // কল দাতার একই চ্যানেল এবং টোকেন দিয়ে জয়েন করা
+        const token = TEMP_TOKEN; // টেস্ট মোডের হার্ডকোডেড টোকেন
+        const channelName = callData.channelName;
+        
+        const uid = await agoraClient.join(AGORA_APP_ID, channelName, token, 0);
+        console.log("Joined Agora call successfully as Receiver, UID:", uid);
+
+        // নিজের অডিও ট্র্যাক অন করা
+        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        let tracksToPublish = [localAudioTrack];
+
+        // যদি ভিডিও কল হয়, তবে নিজের ক্যামেরাও অন করা
+        if (callData.type === "video") {
+            localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+            tracksToPublish.push(localVideoTrack);
+            
+            if (document.getElementById('local-video-container')) {
+                localVideoTrack.play('local-video-container');
+            }
+        }
+
+        // এগোরা সার্ভারে নিজের মিডিয়া পাবলিশ করা
+        await agoraClient.publish(tracksToPublish);
+
+        // ডেটাবেজে কলের স্ট্যাটাস বদলে "connected" করে দেওয়া
+        await db.collection("users").doc(auth.currentUser.uid).set({
+            currentCall: { status: "connected" }
+        }, { merge: true });
+
+        // কল স্ক্রিন UI ওপেন করা
+        const callScreen = document.getElementById('call-screen') || document.getElementById('video-call-overlay');
+        if (callScreen) callScreen.style.display = 'block';
+        
+        const endBtn = document.getElementById('end-call-btn');
+        if (endBtn) endBtn.style.display = 'inline-block';
+
+        // অপর পাশের (যে কল দিয়েছে) অডিও-ভিডিও শো করার লিসেনার চালু করা
+        setupRemoteUserListeners();
+
+    } catch (error) {
+        console.error("Failed to accept call:", error);
+        alert("কল রিসিভ করতে সমস্যা হয়েছে: " + error.message);
+    }
+};
+
+// ৩. কল রিজেক্ট বা কেটে দেওয়ার ফাংশন
+window.rejectIncomingCall = async function(callerId) {
+    if (auth.currentUser && db) {
+        try {
+            await db.collection("users").doc(auth.currentUser.uid).update({
+                currentCall: firebase.firestore.FieldValue.delete()
+            });
+            alert("কলটি রিজেক্ট করা হয়েছে।");
+        } catch (e) { 
+            console.error("Firebase call delete error:", e); 
+        }
     }
 };
