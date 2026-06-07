@@ -10,9 +10,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.0.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -20,420 +23,435 @@
 </head>
 <body>
 
-<div id="sidebar" class="sidebar">
-    <div class="sidebar-header">MENU <i class="fas fa-times" onclick="toggleSidebar()"></i></div>
-    
-    <div class="sidebar-section-title">Main</div>
-    <div class="sidebar-item" onclick="openDashboard()"><i class="fas fa-chart-line"></i> Dashboard</div>
-    <div class="sidebar-item" onclick="openProfileSecurity()"><i class="fas fa-user-lock"></i> Profile Security</div>
-    
-    <div class="sidebar-section-title">Earnings</div>
-    <div class="sidebar-item" onclick="openWallet()"><i class="fas fa-credit-card"></i> Wallet</div>
-    <div class="sidebar-item" onclick="openReferral()"><i class="fas fa-gift"></i> Refer & Earn</div>
-    
-    <div class="sidebar-title sidebar-section-title">Preferences</div>
-    <div class="sidebar-item dark-mode-row">
-        <span><i class="fas fa-moon"></i> Dark Mode</span>
-        <label class="switch">
-            <input type="checkbox" id="darkModeCheckbox" onclick="toggleDarkMode()">
-            <span class="slider round"></span>
-        </label>
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">MENU <i class="fas fa-times" onclick="toggleSidebar()"></i></div>
+        
+        <div class="sidebar-section-title">Main</div>
+        <div class="sidebar-item" onclick="openDashboard()"><i class="fas fa-chart-line"></i> Dashboard</div>
+        <div class="sidebar-item" onclick="openProfileSecurity()"><i class="fas fa-user-lock"></i> Profile Security</div>
+        
+        <div class="sidebar-section-title">Earnings</div>
+        <div class="sidebar-item" onclick="openWallet()"><i class="fas fa-credit-card"></i> Wallet</div>
+        <div class="sidebar-item" onclick="openReferral()"><i class="fas fa-gift"></i> Refer & Earn</div>
+        
+        <div class="sidebar-title sidebar-section-title">Preferences</div>
+        <div class="sidebar-item dark-mode-row">
+            <span><i class="fas fa-moon"></i> Dark Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="darkModeCheckbox" onclick="toggleDarkMode()">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        <div class="sidebar-item" onclick="openSettings()"><i class="fas fa-cog"></i> Settings</div>
+        
+        <div class="sidebar-section-title">Support & Info</div>
+        <div class="sidebar-item" onclick="openLiveSupport()"><i class="fas fa-comment-alt"></i> Live Support</div>
+        <div class="sidebar-item" onclick="openCopyright()"><i class="fas fa-exclamation-circle"></i> Copyright Issues</div>
+        <div class="sidebar-item" onclick="openPrivacy()"><i class="fas fa-shield-alt"></i> Privacy</div>
+        <div class="sidebar-item" onclick="openAbout()"><i class="fas fa-info-circle"></i> About</div>
+        
+        <div class="sidebar-item logout-item" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
     </div>
-    <div class="sidebar-item" onclick="openSettings()"><i class="fas fa-cog"></i> Settings</div>
-    
-    <div class="sidebar-section-title">Support & Info</div>
-    <div class="sidebar-item" onclick="openLiveSupport()"><i class="fas fa-comment-alt"></i> Live Support</div>
-    <div class="sidebar-item" onclick="openCopyright()"><i class="fas fa-exclamation-circle"></i> Copyright Issues</div>
-    <div class="sidebar-item" onclick="openPrivacy()"><i class="fas fa-shield-alt"></i> Privacy</div>
-    <div class="sidebar-item" onclick="openAbout()"><i class="fas fa-info-circle"></i> About</div>
-    
-    <div class="sidebar-item logout-item" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
-</div>
-<div id="overlay" onclick="toggleSidebar()"></div>
+    <div id="overlay" onclick="toggleSidebar()"></div>
 
-<div id="onboarding-wrapper">
-    <div class="auth-container">
-        <h2 id="auth-title">AI SPHERE</h2><br>
-        <input type="email" id="email" class="auth-in" placeholder="Email">
-        <input type="password" id="password" class="auth-in" placeholder="Password">
-        <button class="btn-auth" id="authBtn" onclick="handleAuth()">Login</button>
-        <p onclick="toggleAuthMode()" id="auth-switch">Don't have an account? Sign Up</p>
-        <p id="auth-status"></p>
-    </div>
-</div>
-
-<div id="home-page" style="display:none;">
-    <div class="top-header">
-        <i class="fas fa-bars" onclick="toggleSidebar()"></i>
-        <div class="logo">AI SPHERE</div>
-        <div style="display:flex; gap:15px;">
-            <i class="fas fa-bell"></i>
-            <i class="fab fa-facebook-messenger" onclick="nav('messages')"></i>
+    <div id="onboarding-wrapper">
+        <div class="auth-container">
+            <h2 id="auth-title">AI SPHERE</h2><br>
+            <input type="email" id="email" class="auth-in" placeholder="Email">
+            <input type="password" id="password" class="auth-in" placeholder="Password">
+            <button class="btn-auth" id="authBtn" onclick="handleAuth()">Login</button>
+            <p onclick="toggleAuthMode()" id="auth-switch">Don't have an account? Sign Up</p>
+            <p id="auth-status"></p>
         </div>
     </div>
 
-    <div class="nav-tabs">
-        <div class="tab active" id="tab-home" onclick="nav('home')"><i class="fas fa-home"></i>Home</div>
-        <div class="tab" id="tab-reels" onclick="nav('reels')"><i class="fas fa-bolt"></i>Reels</div>
-        <div class="tab" id="tab-friends" onclick="nav('friends')"><i class="fas fa-users"></i>Friends</div>
-        <div class="tab" onclick="nav('dashboard')"><i class="fas fa-chart-bar"></i>Stats</div>
-        <div class="tab" id="tab-profile" onclick="nav('profile')"><i class="fas fa-user-circle"></i>Profile</div>
-    </div>
-
-    <div class="content-area">
-        <div id="hero-section">
-            <div class="main-container">
-                <div class="earth-container" onclick="nav('global-feed')" style="cursor: pointer;">
-                    <img src="https://i.postimg.cc/h4rxPrY3/1778359158913.png" class="earth-img">
-                </div>
-                <div class="user-bubble b-top"><img src="https://i.pravatar.cc/100?u=11"></div>
-                <div class="user-bubble b-bottom"><img src="https://i.pravatar.cc/100?u=12"></div>
-                <div class="user-bubble b-left"><img src="https://i.pravatar.cc/100?u=13"></div>
-                <div class="user-bubble b-right"><img src="https://i.pravatar.cc/100?u=14"></div>
+    <div id="home-page" style="display:none;">
+        
+        <div class="top-header">
+            <i class="fas fa-bars" onclick="toggleSidebar()"></i>
+            <div class="logo">AI SPHERE</div>
+            <div style="display:flex; gap:15px;">
+                <i class="fas fa-bell"></i>
+                <i class="fab fa-facebook-messenger" onclick="nav('messages')"></i>
             </div>
-            <p style="margin-top:40px; font-size:11px; color:var(--accent); letter-spacing:2px; font-weight:bold;">WELCOME, SAKIB</p>
         </div>
 
-        <div id="global-feed-section" style="display:none;">
-            <div class="feed-header" style="padding: 15px; display: flex; align-items: center; gap: 15px;">
-                <i class="fas fa-arrow-left" onclick="nav('home')" style="cursor: pointer;"></i>
-                <h2 style="font-size: 18px; color: var(--accent);">Global Feed</h2>
-            </div>
-
-            <div class="create-post-trigger-card" style="margin: 0 15px 20px 15px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; flex-shrink: 0;">S</div>
-                    <div onclick="openPostModal()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 25px; color: var(--text-color); opacity: 0.7; cursor: pointer; font-size: 14px; user-select: none;">
-                        সাকিব, নতুন কী ভাবছেন? টাইটেল ও হ্যাশট্যাগ দিয়ে পোস্ট করুন...
-                    </div>
-                </div>
-                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 5px 0;">
-                <div style="display: flex; justify-content: center;">
-                    <label for="post-media-trigger" style="display: flex; align-items: center; gap: 8px; color: #45bd62; cursor: pointer; font-size: 14px; font-weight: 600; padding: 5px 15px; border-radius: 8px; transition: background 0.2s;">
-                        <i class="fas fa-images" style="font-size: 18px;"></i> ফটো / ভিডিও সিলেক্ট করুন
-                    </label>
-                    <input type="file" id="post-media-trigger" accept="image/*,video/*" onchange="handleMediaSelection(this)" style="display: none;">
-                </div>
-            </div>
-
-            <div id="post-display-area" style="padding: 0 15px;"></div>
+        <div class="nav-tabs">
+            <div class="tab active" id="tab-home" onclick="nav('home')"><i class="fas fa-home"></i>Home</div>
+            <div class="tab" id="tab-reels" onclick="nav('reels')"><i class="fas fa-bolt"></i>Reels</div>
+            <div class="tab" id="tab-friends" onclick="nav('friends')"><i class="fas fa-users"></i>Friends</div>
+            <div class="tab" onclick="nav('dashboard')"><i class="fas fa-chart-bar"></i>Stats</div>
+            <div class="tab" id="tab-profile" onclick="nav('profile')"><i class="fas fa-user-circle"></i>Profile</div>
         </div>
 
-        <div id="post-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000;" onclick="closePostModal()"></div>
-
-        <div id="post-popup-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: #1c1e21; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; z-index: 10001; box-shadow: 0 12px 28px rgba(0,0,0,0.5); color: #fff; overflow: hidden; box-sizing: border-box; font-family: sans-serif;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <div style="width: 24px;"></div> <h3 style="margin: 0; font-size: 17px; font-weight: bold; text-align: center; flex: 1;">পোস্ট তৈরি করুন</h3>
-                <i class="fas fa-times" onclick="closePostModal()" style="cursor: pointer; font-size: 18px; opacity: 0.7; padding: 5px;"></i>
-            </div>
+        <div class="content-area">
             
-            <div style="padding: 20px; max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000;">S</div>
-                    <div>
-                        <h4 style="margin: 0; font-size: 14px; color: #fff;">@SAKIB</h4>
-                        <span style="font-size: 11px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; opacity: 0.8;"><i class="fas fa-globe-americas" style="margin-right: 4px;"></i>Public</span>
+            <div id="hero-section">
+                <div class="main-container">
+                    <div class="earth-container" onclick="nav('global-feed')" style="cursor: pointer;">
+                        <img src="https://i.postimg.cc/h4rxPrY3/1778359158913.png" class="earth-img">
                     </div>
+                    <div class="user-bubble b-top"><img src="https://i.pravatar.cc/100?u=11"></div>
+                    <div class="user-bubble b-bottom"><img src="https://i.pravatar.cc/100?u=12"></div>
+                    <div class="user-bubble b-left"><img src="https://i.pravatar.cc/100?u=13"></div>
+                    <div class="user-bubble b-right"><img src="https://i.pravatar.cc/100?u=14"></div>
                 </div>
-
-                <input type="text" id="modal-post-title" placeholder="পোস্টের আকর্ষনীয় টাইটেল দিন (ঐচ্ছিক)..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 12px; color: #fff; outline: none; font-size: 14px; box-sizing: border-box; font-weight: 600;">
-                <textarea id="modal-post-input" rows="4" placeholder="সাকিব, এখানে আপনার বিস্তারিত মনের কথা লিখুন..." style="width: 100%; background: transparent; border: none; color: #fff; outline: none; font-size: 15px; resize: none; box-sizing: border-box; padding: 5px 0; line-height: 1.4;"></textarea>
-                <input type="text" id="modal-post-tags" placeholder="হ্যাশট্যাগ দিন (যেমন: #aisphere #cyber)..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 12px; color: #00e5ff; outline: none; font-size: 13px; box-sizing: border-box;">
-                <div id="modal-media-preview" style="display: none; position: relative; width: 100%; max-height: 220px; border-radius: 10px; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.05);"></div>
+                <p style="margin-top:40px; font-size:11px; color:var(--accent); letter-spacing:2px; font-weight:bold;">WELCOME...</p>
             </div>
 
-            <div style="padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; background: #1c1e21;">
-                <button onclick="closePostModal()" style="flex: 1; background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">বাতিল</button>
-                <button id="modal-submit-btn" onclick="handleModalPostSubmit()" style="flex: 2; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                    <i class="fas fa-paper-plane"></i> পোস্ট করুন
-                </button>
-            </div>
-        </div>
-
-        <div id="reels-section" style="display:none; height: calc(100vh - 120px); background: #000; overflow-y: scroll; scroll-snap-type: y mandatory; border-radius: 20px; margin: 0 10px;"></div>
-
-        <div id="friends-page" style="display:none; padding: 20px;">
-            <div class="feed-header" style="padding-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-                <i class="fas fa-arrow-left" onclick="nav('home')"></i>
-                <h2 style="font-size: 18px; color: var(--accent);">খুঁজে নিন বন্ধুদের</h2>
-            </div>
-            <div id="user-list-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;"></div>
-        </div>
-
-        <div id="profile-page" style="display:none;">
-            <div class="cover-photo" style="position: relative; height: 160px; background: #222; overflow: hidden;">
-                <img src="https://i.postimg.cc/mD363rVj/abstract-technology-background.jpg" id="my-cover-img" style="width: 100%; height: 100%; object-fit: cover;">
-                <label for="cover-upload" style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px; cursor: pointer; color: white; font-size: 14px; z-index: 100; border: 1px solid rgba(255,255,255,0.3);">
-                    <i class="fas fa-camera"></i>
-                </label>
-                <input type="file" id="cover-upload" style="display:none;" accept="image/*" onchange="updateProfileMedia('cover')">
-            </div>
-            
-            <div class="profile-header-info" style="text-align: center; margin-top: -50px;">
-                <div class="profile-pic-box" style="position: relative; display: inline-block;">
-                    <img src="https://i.postimg.cc/85zXp9mX/user-placeholder.png" id="my-profile-img" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--bg-dark); object-fit: cover;">
-                    <label for="profile-upload" style="position: absolute; bottom: 5px; right: 5px; background: var(--accent); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg-dark); z-index: 100;">
-                        <i class="fas fa-camera" style="font-size: 14px; color: #000;"></i>
-                    </label>
-                    <input type="file" id="profile-upload" style="display:none;" accept="image/*" onchange="updateProfileMedia('profile')">
+            <div id="global-feed-section" style="display:none;">
+                <div class="feed-header" style="padding: 15px; display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-arrow-left" onclick="nav('home')" style="cursor: pointer;"></i>
+                    <h2 style="font-size: 18px; color: var(--accent);">Global Feed</h2>
                 </div>
                 
-                <h2 id="profile-name" style="margin-top: 10px;">SAKIB</h2>
-                <p id="profile-bio">Cyber Security Expert | Developer</p>
-
-                <div style="display: flex; justify-content: center; gap: 30px; margin: 15px 0; color: var(--text-color);">
-                    <div style="text-align: center; cursor: pointer;">
-                        <strong id="follower-count" style="font-size: 18px; color: #00e5ff; display: block;">0</strong>
-                        <span style="font-size: 12px; opacity: 0.6;">Followers</span>
+                <div class="create-post-trigger-card" style="margin: 0 15px 20px 15px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; flex-shrink: 0;">S</div>
+                        <div onclick="openPostModal()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 25px; color: var(--text-color); opacity: 0.7; cursor: pointer; font-size: 14px; user-select: none;">
+                            What's on your mind....
+                        </div>
                     </div>
-                    <div style="text-align: center; cursor: pointer;">
-                        <strong id="following-count" style="font-size: 18px; color: #00e5ff; display: block;">0</strong>
-                        <span style="font-size: 12px; opacity: 0.6;">Following</span>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 5px 0;">
+                    <div style="display: flex; justify-content: center;">
+                        <label for="post-media-trigger" style="display: flex; align-items: center; gap: 8px; color: #45bd62; cursor: pointer; font-size: 14px; font-weight: 600; padding: 5px 15px; border-radius: 8px; transition: background 0.2s;">
+                            <i class="fas fa-images" style="font-size: 18px;"></i> Photo / Video Select
+                        </label>
+                        <input type="file" id="post-media-trigger" accept="image/*,video/*" onchange="handleMediaSelection(this)" style="display: none;">
                     </div>
                 </div>
+                
+                <div id="post-display-area" style="padding: 0 15px;"></div>
+            </div>
 
-                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn-auth" style="width:auto; padding:10px 30px; border-radius:20px; margin: 0;" onclick="editProfileDetails()">Edit Bio</button>
-                    <button id="profile-msg-btn" class="btn-auth" style="display:none; width:auto; padding:10px 25px; border-radius:20px; margin: 0; background: rgba(0, 229, 255, 0.15); color: #00e5ff; border: 1px solid #00e5ff; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fab fa-facebook-messenger"></i> Message
+            <div id="post-popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000;" onclick="closePostModal()"></div>
+            <div id="post-popup-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: #1c1e21; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; z-index: 10001; box-shadow: 0 12px 28px rgba(0,0,0,0.5); color: #fff; overflow: hidden; box-sizing: border-box; font-family: sans-serif;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div style="width: 24px;"></div> <h3 style="margin: 0; font-size: 17px; font-weight: bold; text-align: center; flex: 1;">Create post</h3>
+                    <i class="fas fa-times" onclick="closePostModal()" style="cursor: pointer; font-size: 18px; opacity: 0.7; padding: 5px;"></i>
+                </div>
+                <div style="padding: 20px; max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000;">S</div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 14px; color: #fff;">@SAKIB</h4>
+                            <span style="font-size: 11px; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; opacity: 0.8;"><i class="fas fa-globe-americas" style="margin-right: 4px;"></i>Public</span>
+                        </div>
+                    </div>
+                    <input type="text" id="modal-post-title" placeholder="Give the post a catchy title (optional)..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 12px; color: #fff; outline: none; font-size: 14px; box-sizing: border-box; font-weight: 600;">
+                    <textarea id="modal-post-input" rows="4" placeholder="Write your thoughts here...." style="width: 100%; background: transparent; border: none; color: #fff; outline: none; font-size: 15px; resize: none; box-sizing: border-box; padding: 5px 0; line-height: 1.4;"></textarea>
+                    <input type="text" id="modal-post-tags" placeholder="হ্যাশট্যাগ দিন (যেমন: #aisphere #viral)..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 12px; color: #00e5ff; outline: none; font-size: 13px; box-sizing: border-box;">
+                    <div id="modal-media-preview" style="display: none; position: relative; width: 100%; max-height: 220px; border-radius: 10px; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.05);"></div>
+                </div>
+                <div style="padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; background: #1c1e21;">
+                    <button onclick="closePostModal()" style="flex: 1; background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">cancel</button>
+                    <button id="modal-submit-btn" onclick="handleModalPostSubmit()" style="flex: 2; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                        <i class="fas fa-paper-plane"></i> Post
                     </button>
                 </div>
             </div>
-            <div id="user-posts-area" style="padding: 0 15px;"></div>
-        </div>
 
-        <div id="edit-profile-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; box-sizing: border-box; z-index: 2500; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: var(--accent); margin: 0;">Edit Profile</h3>
-                <i class="fas fa-times" onclick="document.getElementById('edit-profile-modal').style.display='none'; document.getElementById('edit-profile-overlay').style.display='none';" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                <label style="font-size: 12px; opacity: 0.7;">Name</label>
-                <input type="text" id="profile-name-input" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; border-radius: 8px; outline: none; box-sizing: border-box;">
-                <label style="font-size: 12px; opacity: 0.7;">Bio</label>
-                <input type="text" id="profile-bio-input" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; border-radius: 8px; outline: none; box-sizing: border-box;">
-            </div>
-            <button class="btn-auth" style="background: var(--accent); color: #000; font-weight: bold; width: 100%;" onclick="saveProfileData()">Save Profile</button>
-        </div>
-        <div id="edit-profile-overlay" onclick="document.getElementById('edit-profile-modal').style.display='none'; document.getElementById('edit-profile-overlay').style.display='none';" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2499;"></div>
-
-        <div id="settings-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-cog"></i> Settings</h2>
-            <div class="post-card" style="cursor: pointer;" onclick="changePassword()">
-                <h4><i class="fas fa-key"></i> Change Password</h4>
-                <p style="font-size: 12px; opacity: 0.6; margin-top: 5px;">তোমার পাসওয়ার্ড পরিবর্তন করতে এখানে চাপ দাও</p>
-            </div>
-        </div>
-
-        <div id="about-page" style="display:none; padding: 20px;">
-            <div class="feed-header" style="padding-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-                <i class="fas fa-arrow-left" onclick="nav('home')"></i>
-                <h2 style="font-size: 18px; color: var(--accent); margin: 0;">About Us</h2>
-            </div>
-            <div class="post-card" style="text-align: center; padding: 30px 15px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border-color);">
-                <img src="https://i.postimg.cc/DyLVPN3z/1778367632213.png" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,229,255,0.2); margin-bottom: 15px;">
-                <h2 style="color: var(--accent); margin: 0; font-size: 22px; letter-spacing: 1px;">AI SPHERE</h2>
-                <p style="font-size: 12px; opacity: 0.6; margin: 5px 0 15px 0;">Version 1.0.0 (Build 100)</p>
-                <p style="font-size: 14px; line-height: 1.6; opacity: 0.8; margin-bottom: 25px; padding: 0 10px;">
-                    এটি একটি নেক্সট-জেনারেশন সোশ্যাল মিডিয়া এবং রিলস শেয়ারিং প্ল্যাটফর্ম। সম্পূর্ণ সিকিউর এবং ফাস্ট ইউজার এক্সপেরিয়েন্সের সাথে যুক্ত থাকুন গ্লোবাল কমিউনিটির সাথে।
-                </p>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 10px;">
-                    <p style="font-size: 11px; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;">Sole Developer</p>
-                    <h4 style="color: #fff; font-size: 16px; margin: 0;"><i class="fas fa-code" style="color: var(--accent); margin-right: 5px;"></i> SAKIB</h4>
-                    <p style="font-size: 12px; color: var(--accent); opacity: 0.8; margin-top: 2px;">Cyber Security Expert | Developer</p>
+            <div id="reels-section" style="display:none; height: calc(100vh - 120px); background: #000; overflow-y: scroll; scroll-snap-type: y mandatory; border-radius: 20px; margin: 0 10px;"></div>
+            
+            <div id="friends-page" style="display:none; padding: 20px;">
+                <div class="feed-header" style="padding-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-arrow-left" onclick="nav('home')"></i>
+                    <h2 style="font-size: 18px; color: var(--accent);">Find your friend</h2>
                 </div>
-                <p style="font-size: 11px; opacity: 0.4; margin-top: 35px;">&copy; 2026 AI SPHERE. All Rights Reserved.</p>
+                <div id="user-list-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;"></div>
             </div>
-        </div>
 
-        <div id="privacy-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-shield-alt"></i> Privacy Policy</h2>
-            <div class="post-card">
-                <h4>Data Security</h4>
-                <p style="font-size: 13px; line-height: 1.6; margin-top: 10px; opacity: 0.8;">তোমার সমস্ত ডেটা ক্লাউড ফায়ারস্টোর এনক্রিপশনের মাধ্যমে সম্পূর্ণ সুরক্ষিত অবস্থায় থাকে।</p>
+            <div id="profile-page" style="display:none;">
+                <div class="cover-photo" style="position: relative; height: 160px; background: #222; overflow: hidden;">
+                    <img src="https://i.postimg.cc/mD363rVj/abstract-technology-background.jpg" id="my-cover-img" style="width: 100%; height: 100%; object-fit: cover;">
+                    <label for="cover-upload" style="position: absolute; bottom: 15px; right: 15px; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px; cursor: pointer; color: white; font-size: 14px; z-index: 100; border: 1px solid rgba(255,255,255,0.3);">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="cover-upload" style="display:none;" accept="image/*" onchange="updateProfileMedia('cover')">
+                </div>
+                
+                <div class="profile-header-info" style="text-align: center; margin-top: -50px;">
+                    <div class="profile-pic-box" style="position: relative; display: inline-block;">
+                        <img src="https://i.postimg.cc/85zXp9mX/user-placeholder.png" id="my-profile-img" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--bg-dark); object-fit: cover;">
+                        <label for="profile-upload" style="position: absolute; bottom: 5px; right: 5px; background: var(--accent); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg-dark); z-index: 100;">
+                            <i class="fas fa-camera" style="font-size: 14px; color: #000;"></i>
+                        </label>
+                        <input type="file" id="profile-upload" style="display:none;" accept="image/*" onchange="updateProfileMedia('profile')">
+                    </div>
+                    
+                    <h2 id="profile-name" style="margin-top: 10px;">Username</h2>
+                    <p id="profile-bio">Cyber Security Expert | Developer</p>
+                    <div style="display: flex; justify-content: center; gap: 30px; margin: 15px 0; color: var(--text-color);">
+                        <div style="text-align: center; cursor: pointer;">
+                            <strong id="follower-count" style="font-size: 18px; color: #00e5ff; display: block;">0</strong>
+                            <span style="font-size: 12px; opacity: 0.6;">Followers</span>
+                        </div>
+                        <div style="text-align: center; cursor: pointer;">
+                            <strong id="following-count" style="font-size: 18px; color: #00e5ff; display: block;">0</strong>
+                            <span style="font-size: 12px; opacity: 0.6;">Following</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn-auth" style="width:auto; padding:10px 30px; border-radius:20px; margin: 0;" onclick="editProfileDetails()">Edit Bio</button>
+                        <button id="profile-msg-btn" class="btn-auth" style="display:none; width:auto; padding:10px 25px; border-radius:20px; margin: 0; background: rgba(0, 229, 255, 0.15); color: #00e5ff; border: 1px solid #00e5ff; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-facebook-messenger"></i> Message
+                        </button>
+                    </div>
+                </div>
+                <div id="user-posts-area" style="padding: 0 15px;"></div>
             </div>
-        </div>
 
-        <div id="dashboard-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-chart-line"></i> Dashboard</h2>
-            <div class="post-card" style="text-align: center; padding: 30px;">
-                <h3 style="font-size: 24px; color: var(--accent);">৳ 0.00</h3>
-                <p style="font-size: 12px; opacity: 0.6; margin-top: 5px;">Total Earnings</p>
+            <div id="edit-profile-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; box-sizing: border-box; z-index: 2500; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: var(--accent); margin: 0;">Edit Profile</h3>
+                    <i class="fas fa-times" onclick="document.getElementById('edit-profile-modal').style.display='none'; document.getElementById('edit-profile-overlay').style.display='none';" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <label style="font-size: 12px; opacity: 0.7;">Name</label>
+                    <input type="text" id="profile-name-input" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; border-radius: 8px; outline: none; box-sizing: border-box;">
+                    <label style="font-size: 12px; opacity: 0.7;">Bio</label>
+                    <input type="text" id="profile-bio-input" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; border-radius: 8px; outline: none; box-sizing: border-box;">
+                </div>
+                <button class="btn-auth" style="background: var(--accent); color: #000; font-weight: bold; width: 100%;" onclick="saveProfileData()">Save Profile</button>
             </div>
-            <div style="display: flex; gap: 15px; margin-top: 15px;">
-                <div class="post-card" style="flex: 1; text-align: center; cursor: pointer;" onclick="openViewsDetail()">
-                    <h4 id="total-views-count">0</h4>
-                    <p style="font-size: 11px; opacity: 0.6;"><i class="fas fa-eye" style="color: var(--accent);"></i> Total Views</p>
-                </div>
-                <div class="post-card" style="flex: 1; text-align: center;">
-                    <h4 id="total-posts-count">0</h4>
-                    <p style="font-size: 11px; opacity: 0.6;">Total Posts</p>
-                </div>
-            </div>
-            <div style="display: flex; gap: 15px; margin-top: 15px;">
-                <div class="post-card" style="flex: 1; text-align: center;">
-                    <h4 id="total-likes-count">0</h4>
-                    <p style="font-size: 11px; opacity: 0.6;">Total Likes</p>
-                </div>
-                <div class="post-card" style="flex: 1; text-align: center;">
-                    <h4 id="total-comments-count">0</h4>
-                    <p style="font-size: 11px; opacity: 0.6;">Total Comments</p>
+            <div id="edit-profile-overlay" onclick="document.getElementById('edit-profile-modal').style.display='none'; document.getElementById('edit-profile-overlay').style.display='none';" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2499;"></div>
+
+            <div id="settings-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-cog"></i> Settings</h2>
+                <div class="post-card" style="cursor: pointer;" onclick="changePassword()">
+                    <h4><i class="fas fa-key"></i> Change Password</h4>
+                    <p style="font-size: 12px; opacity: 0.6; margin-top: 5px;">Chench your password</p>
                 </div>
             </div>
-        </div>
 
-        <div id="views-detail-modal" style="display:none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; z-index: 2600; max-height: 85vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="color: var(--accent); margin: 0;"><i class="fas fa-chart-bar"></i> Views Analytics</h4>
-                <i class="fas fa-times" onclick="closeViewsDetail()" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
-            </div>
-            <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                <canvas id="viewsChart" style="width: 100%; height: 200px;"></canvas>
-            </div>
-            <div class="post-card" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,229,255,0.05); border: 1px solid var(--accent);">
-                <div>
-                    <h4 style="margin: 0; color: #fff;">3s+ Quality Views</h4>
-                    <p style="font-size: 11px; opacity: 0.6; margin: 5px 0 0 0;">ইউজাররা অন্তত ৩ সেকেন্ড কন্টেন্টটি দেখেছে</p>
+            <div id="about-page" style="display:none; padding: 20px;">
+                <div class="feed-header" style="padding-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-arrow-left" onclick="nav('home')"></i>
+                    <h2 style="font-size: 18px; color: var(--accent); margin: 0;">About Us</h2>
                 </div>
-                <h3 id="three-sec-views-count" style="color: var(--accent); margin: 0; font-size: 22px;">0</h3>
+                <div class="post-card" style="text-align: center; padding: 30px 15px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border-color);">
+                    <img src="https://i.postimg.cc/DyLVPN3z/1778367632213.png" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,229,255,0.2); margin-bottom: 15px;">
+                    <h2 style="color: var(--accent); margin: 0; font-size: 22px; letter-spacing: 1px;">AI SPHERE</h2>
+                    <p style="font-size: 12px; opacity: 0.6; margin: 5px 0 15px 0;">Version 1.0.0 (Build 100)</p>
+                    <p style="font-size: 14px; line-height: 1.6; opacity: 0.8; margin-bottom: 25px; padding: 0 10px;">
+                        এটি একটি নেক্সট-জেনারেশন সোশ্যাল মিডিয়া এবং রিলস শেয়ারিং প্ল্যাটফর্ম। সম্পূর্ণ সিকিউর এবং ফাস্ট ইউজার এক্সপেরিয়েন্সের সাথে যুক্ত থাকুন গ্লোবাল কমিউনিটির সাথে।
+                    </p>
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 10px;">
+                        <p style="font-size: 11px; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;">Sole Developer</p>
+                        <h4 style="color: #fff; font-size: 16px; margin: 0;"><i class="fas fa-code" style="color: var(--accent); margin-right: 5px;"></i> SAKIB</h4>
+                        <p style="font-size: 12px; color: var(--accent); opacity: 0.8; margin-top: 2px;">Cyber Security Expert | Developer</p>
+                    </div>
+                    <p style="font-size: 11px; opacity: 0.4; margin-top: 35px;">&copy; 2026 AI SPHERE. All Rights Reserved.</p>
+                </div>
             </div>
-        </div>
-        <div id="views-overlay" onclick="closeViewsDetail()" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2599;"></div>
 
-        <div id="profile-security-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-user-lock"></i> Profile Security</h2>
-            <div class="post-card">
-                <p style="margin-bottom: 15px; font-size: 14px;">তোমার অ্যাকাউন্টের নিরাপত্তা নিশ্চিত করতে এখান থেকে পাসওয়ার্ড পরিবর্তন করতে পারো।</p>
-                <button class="btn-auth" onclick="changePassword()" style="background: linear-gradient(to right, #ff4400, #ffaa00); max-width: 200px;">Change Password</button>
+            <div id="privacy-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-shield-alt"></i> Privacy Policy</h2>
+                <div class="post-card">
+                    <h4>Data Security</h4>
+                    <p style="font-size: 13px; line-height: 1.6; margin-top: 10px; opacity: 0.8;">তোমার সমস্ত ডেটা ক্লাউড ফায়ারস্টোর এনক্রিপশনের মাধ্যমে সম্পূর্ণ সুরক্ষিত অবস্থায় থাকে।</p>
+                </div>
             </div>
-        </div>
 
-        <div id="wallet-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-credit-card"></i> Wallet</h2>
-            <div class="post-card">
-                <h4>Available Balance</h4>
-                <h2 style="color: #4caf50; margin: 10px 0;">৳ 0.00</h2>
-                <p style="font-size: 12px; opacity: 0.5; margin-bottom: 20px;">সর্বনিম্ন ১০০ টাকা হলে উইথড্র করতে পারবে।</p>
+            <div id="dashboard-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-chart-line"></i> Dashboard</h2>
+                <div class="post-card" style="text-align: center; padding: 30px;">
+                    <h3 style="font-size: 24px; color: var(--accent);">৳ 0.00</h3>
+                    <p style="font-size: 12px; opacity: 0.6; margin-top: 5px;">Total Earnings</p>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div class="post-card" style="flex: 1; text-align: center; cursor: pointer;" onclick="openViewsDetail()">
+                        <h4 id="total-views-count">0</h4>
+                        <p style="font-size: 11px; opacity: 0.6;"><i class="fas fa-eye" style="color: var(--accent);"></i> Total Views</p>
+                    </div>
+                    <div class="post-card" style="flex: 1; text-align: center;">
+                        <h4 id="total-posts-count">0</h4>
+                        <p style="font-size: 11px; opacity: 0.6;">Total Posts</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div class="post-card" style="flex: 1; text-align: center;">
+                        <h4 id="total-likes-count">0</h4>
+                        <p style="font-size: 11px; opacity: 0.6;">Total Likes</p>
+                    </div>
+                    <div class="post-card" style="flex: 1; text-align: center;">
+                        <h4 id="total-comments-count">0</h4>
+                        <p style="font-size: 11px; opacity: 0.6;">Total Comments</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="views-detail-modal" style="display:none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; z-index: 2600; max-height: 85vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="color: var(--accent); margin: 0;"><i class="fas fa-chart-bar"></i> Views Analytics</h4>
+                    <i class="fas fa-times" onclick="closeViewsDetail()" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <canvas id="viewsChart" style="width: 100%; height: 200px;"></canvas>
+                </div>
+                <div class="post-card" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,229,255,0.05); border: 1px solid var(--accent);">
+                    <div>
+                        <h4 style="margin: 0; color: #fff;">3s+ Quality Views</h4>
+                        <p style="font-size: 11px; opacity: 0.6; margin: 5px 0 0 0;">3 second views</p>
+                    </div>
+                    <h3 id="three-sec-views-count" style="color: var(--accent); margin: 0; font-size: 22px;">0</h3>
+                </div>
+            </div>
+            <div id="views-overlay" onclick="closeViewsDetail()" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2599;"></div>
+
+            <div id="profile-security-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-user-lock"></i> Profile Security</h2>
+                <div class="post-card">
+                    <p style="margin-bottom: 15px; font-size: 14px;">Change your password</p>
+                    <button class="btn-auth" onclick="changePassword()" style="background: linear-gradient(to right, #ff4400, #ffaa00); max-width: 200px;">Change Password</button>
+                </div>
+            </div>
+
+            <div id="wallet-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-credit-card"></i> Wallet</h2>
+                <div class="post-card">
+                    <h4>Available Balance</h4>
+                    <h2 style="color: #4caf50; margin: 10px 0;">৳ 0.00</h2>
+                    <p style="font-size: 12px; opacity: 0.5; margin-bottom: 20px;">সর্বনিম্ন ১০০ টাকা হলে উইথড্র করতে পারবেন।</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-auth" style="flex: 1; font-size: 13px;">Bkash</button>
+                        <button class="btn-auth" style="flex: 1; font-size: 13px; background: linear-gradient(to right, #ff3d00, #ff9100);">Nagad</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="refer-page" style="display:none; padding: 20px;">
+                <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-gift"></i> Refer & Earn</h2>
+                <div class="post-card" style="text-align: center;">
+                    <p style="font-size: 14px; margin-bottom: 15px;">বন্ধুদের ইনভাইট করো এবং প্রতি সফল রেফারে জিতে নাও আকর্ষণীয় বোনাস!</p>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-weight: bold; border: 1px dashed var(--accent); margin-bottom: 15px;">SPHERE-5823</div>
+                    <button class="btn-auth" onclick="handleShare()" style="max-width: 180px; margin: 0 auto;">Copy Invite Link</button>
+                </div>
+            </div>
+
+            <div id="support-page" style="display:none; padding: 20px; text-align: center;">
+                <h2><i class="fas fa-headset"></i> Live Support</h2>
+                <p style="font-size: 14px; opacity: 0.7; margin: 10px 0 20px 0;">যেকোনো সমস্যায় আমাদের সাথে সরাসরি যোগাযোগ করুন।</p>
+                <button class="btn-auth" onclick="window.open('https://wa.me/8801311954629', '_blank')" style="max-width: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fab fa-whatsapp" style="font-size: 18px;"></i> Start Live Chat
+                </button>
+            </div>
+
+            <div id="copyright-page" style="display:none; padding: 20px;">
+                <div class="post-card">
+                    <h4 style="color: #ff5252;">কপিরাইট পলিসি নোটিশ</h4>
+                    <p style="font-size: 13px; line-height: 1.6; margin-top: 10px; opacity: 0.9;">
+                        AI SPHERE প্ল্যাটফর্মে অন্যের কন্টেন্ট (ভিডিও, ছবি বা লেখা) অনুমতি ছাড়া পোস্ট করা সম্পূর্ণ নিষিদ্ধ। কোনো কন্টেন্টে কপিরাইট ক্লেইম আসবে কন্টেন্টটি রিমুভ করা হবে এবং রিওয়ার্ড বাতিল হতে পারে।
+                    </p>
+                </div>
+            </div>
+
+            <div id="comment-modal" style="display:none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; z-index: 2000;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="color: var(--accent); margin: 0;">Comments</h4>
+                    <i class="fas fa-times" onclick="closeCommentBox()" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
+                </div>
+                <div id="modal-comments-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn-auth" style="flex: 1; font-size: 13px;">bKash</button>
-                    <button class="btn-auth" style="flex: 1; font-size: 13px; background: linear-gradient(to right, #ff3d00, #ff9100);">Nagad</button>
+                    <input type="text" id="modal-comment-input" placeholder="Write a comment..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px 15px; border-radius: 20px; outline: none; font-size: 14px;">
+                    <button id="submit-comment-btn" style="background: var(--accent); color: black; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Send</button>
                 </div>
             </div>
-        </div>
+            <div id="comment-overlay" onclick="closeCommentBox()" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999;"></div>
 
-        <div id="refer-page" style="display:none; padding: 20px;">
-            <h2 style="color: var(--accent); margin-bottom: 20px;"><i class="fas fa-gift"></i> Refer & Earn</h2>
-            <div class="post-card" style="text-align: center;">
-                <p style="font-size: 14px; margin-bottom: 15px;">বন্ধুদের ইনভাইট করো এবং প্রতি সফল রেফারে জিতে নাও আকর্ষণীয় বোনাস!</p>
-                <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-weight: bold; border: 1px dashed var(--accent); margin-bottom: 15px;">SPHERE-5823</div>
-                <button class="btn-auth" onclick="handleShare()" style="max-width: 180px; margin: 0 auto;">Copy Invite Link</button>
-            </div>
-        </div>
-
-        <div id="support-page" style="display:none; padding: 20px; text-align: center;">
-            <h2><i class="fas fa-headset"></i> Live Support</h2>
-            <p style="font-size: 14px; opacity: 0.7; margin: 10px 0 20px 0;">সাকিব, যেকোনো সমস্যায় আমাদের সাথে সরাসরি যোগাযোগ করো।</p>
-            <button class="btn-auth" onclick="window.open('https://wa.me/8801311954629', '_blank')" style="max-width: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i class="fab fa-whatsapp" style="font-size: 18px;"></i> Start Live Chat
-            </button>
-        </div>
-
-        <div id="copyright-page" style="display:none; padding: 20px;">
-            <div class="post-card">
-                <h4 style="color: #ff5252;">কপিরাইট পলিসি নোটিশ</h4>
-                <p style="font-size: 13px; line-height: 1.6; margin-top: 10px; opacity: 0.9;">
-                    AI SPHERE প্ল্যাটফর্মে অন্যের কন্টেন্ট (ভিডিও, ছবি বা লেখা) অনুমতি ছাড়া পোস্ট করা সম্পূর্ণ নিষিদ্ধ। কোনো কন্টেন্টে কপিরাইট ক্লেইম আসলে কন্টেন্টটি রিমুভ করা হবে এবং রিওয়ার্ড বাতিল হতে পারে।
-                </p>
-            </div>
-        </div>
-
-        <div id="comment-modal" style="display:none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border-color); border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; z-index: 2000;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="color: var(--accent); margin: 0;">Comments</h4>
-                <i class="fas fa-times" onclick="closeCommentBox()" style="cursor: pointer; color: #ff4444; font-size: 18px;"></i>
-            </div>
-            <div id="modal-comments-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="modal-comment-input" placeholder="একটি মন্তব্য লিখুন..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px 15px; border-radius: 20px; outline: none; font-size: 14px;">
-                <button id="submit-comment-btn" style="background: var(--accent); color: black; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Send</button>
-            </div>
-        </div>
-        <div id="comment-overlay" onclick="closeCommentBox()" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999;"></div>
-
+        </div> 
     </div> 
-</div> 
 
-<div id="messages-section" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-dark, #fff); color: var(--text-color, #000); font-family: sans-serif; z-index: 9999;">
-    <div id="chat-p1-list" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg-dark, #fff); position: absolute; top: 0; left: 0; z-index: 2;">
-        <div style="padding: 15px; border-bottom: 1px solid var(--border-color, #e0e0e0); display: flex; align-items: center; gap: 15px; background: var(--card-bg, #f5f5f5);">
-            <i class="fas fa-arrow-left" onclick="nav('home')" style="cursor: pointer; font-size: 16px; color: var(--accent, #00e5ff);"></i>
-            <h3 style="margin: 0; font-size: 20px; font-weight: bold; color: var(--text-color, #000);">Messenger</h3>
-        </div>
-        <div id="chat-users-list" style="flex: 1; overflow-y: auto; padding: 10px;">
-            <div onclick="openChatWindow('MD SHAKIB', 'S')" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card-bg, #f5f5f5); border: 1px solid var(--border-color, #e0e0e0); border-radius: 12px; margin-bottom: 8px; cursor: pointer;">
-                <div style="width: 45px; height: 45px; background: var(--accent, #00e5ff); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; font-size: 16px;">S</div>
-                <div style="flex: 1;">
-                    <h4 style="margin: 0; font-size: 15px; color: var(--text-color, #000);">MD SHAKIB</h4>
-                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-color, #000); opacity: 0.5;">ট্যাপ করে চ্যাট শুরু করো...</p>
+    <div id="messages-section" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--bg-dark, #fff); color: var(--text-color, #000); font-family: sans-serif; z-index: 9999;">
+        
+        <div id="chat-p1-list" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg-dark, #fff); position: absolute; top: 0; left: 0; z-index: 2;">
+            <div style="padding: 15px; border-bottom: 1px solid var(--border-color, #e0e0e0); display: flex; align-items: center; gap: 15px; background: var(--card-bg, #f5f5f5);">
+                <i class="fas fa-arrow-left" onclick="nav('home')" style="cursor: pointer; font-size: 16px; color: var(--accent, #00e5ff);"></i>
+                <h3 style="margin: 0; font-size: 20px; font-weight: bold; color: var(--text-color, #000);">Messenger</h3>
+            </div>
+            <div id="chat-users-list" style="flex: 1; overflow-y: auto; padding: 10px;">
+                <div style="text-align: center; padding: 20px; opacity: 0.5; font-size: 13px; color: var(--text-color, #000);">
+                    <i class="fas fa-spinner fa-spin"></i> Loading chat...
                 </div>
-                <div style="width: 8px; height: 8px; background: #00e5ff; border-radius: 50%;"></div>
+            </div>
+        </div>
+
+        <div id="chat-p2-box" style="display: none; width: 100%; height: 100%; flex-direction: column; background: var(--bg-dark, #fff); position: absolute; top: 0; left: 0; z-index: 3;">
+            
+            <div style="padding: 15px; border-bottom: 1px solid var(--border-color, #e0e0e0); display: flex; align-items: center; justify-content: space-between; background: var(--card-bg, #f5f5f5);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-arrow-left" onclick="closeChatWindow()" style="cursor: pointer; font-size: 16px; color: var(--accent, #00e5ff); padding-right: 5px;"></i>
+                    <div id="active-chat-avatar" style="width: 38px; height: 38px; background: var(--accent, #00e5ff); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; font-size: 14px;">S</div>
+                    <div>
+                        <h4 id="active-chat-name" style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-color, #000);">MD SHAKIB</h4>
+                        <p style="margin: 0; font-size: 11px; color: var(--accent, #00e5ff); font-weight: bold;">Active now</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 18px; color: var(--accent, #00e5ff); font-size: 18px; padding-right: 5px;">
+                    <i class="fas fa-phone-alt" style="cursor: pointer;" onclick="startAudioCalling()"></i>
+                    <i class="fas fa-video" style="cursor: pointer;" onclick="startVideoCalling()"></i>
+                    <i class="fas fa-ellipsis-v" style="cursor: pointer; color: var(--text-color, #000);"></i>
+                </div>
+            </div>
+
+            <div id="video-call-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0b0c0e; z-index: 10; flex-direction: column; justify-content: space-between; padding: 30px 20px; box-sizing: border-box;">
+                <div style="text-align: center;">
+                    <h3 id="call-screen-name" style="color: #fff; margin: 0 0 5px 0; font-size: 22px;">Calling...</h3>
+                    <p id="call-screen-status" style="color: var(--accent); margin: 0; font-size: 14px; letter-spacing: 1px;">CONNECTING</p>
+                    <p id="call-timer" style="color: #fff; margin: 5px 0 0 0; font-size: 16px; font-weight: bold; display: none;">00:00</p>
+                </div>
+
+                <div style="position: relative; flex: 1; width: 100%; margin: 20px 0; background: #16191e; border-radius: 15px; overflow: hidden;">
+                    <div id="remote-player" style="width: 100%; height: 100%; background: #1c1e22;"></div>
+                    <div id="local-player" style="position: absolute; top: 15px; right: 15px; width: 100px; height: 140px; background: #2a2e35; border: 2px solid var(--accent); border-radius: 10px; z-index: 11; overflow: hidden;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 25px; align-items: center; margin-bottom: 20px;">
+                    <button onclick="toggleMic()" style="background: rgba(255,255,255,0.1); border: none; width: 50px; height: 50px; border-radius: 50%; color: white; cursor: pointer; font-size: 18px;"><i class="fas fa-microphone" id="mic-icon"></i></button>
+                    <button onclick="endCall()" style="background: #ff3b30; border: none; width: 65px; height: 65px; border-radius: 50%; color: white; cursor: pointer; font-size: 24px;"><i class="fas fa-phone-slash"></i></button>
+                    <button onclick="toggleCamera()" style="background: rgba(255,255,255,0.1); border: none; width: 50px; height: 50px; border-radius: 50%; color: white; cursor: pointer; font-size: 18px;"><i class="fas fa-video" id="cam-icon"></i></button>
+                </div>
+            </div>
+
+            <div id="chat-messages-container" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="align-self: center; background: rgba(0, 0, 0, 0.03); border: 1px solid var(--border-color, #e0e0e0); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--text-color, #000); opacity: 0.5;">End-to-end encrypted</div>
+            </div>
+            
+            <div style="padding: 12px 15px; border-top: 1px solid var(--border-color, #e0e0e0); background: var(--card-bg, #f5f5f5); display: flex; align-items: center; gap: 10px; padding-bottom: calc(12px + env(safe-area-inset-bottom));">
+                <input type="text" id="chat-message-input" onkeypress="if(event.key === 'Enter') window.sendDirectMessage()" placeholder="Message..." style="flex: 1; background: var(--bg-dark, #fff); border: 1px solid var(--border-color, #e0e0e0); color: var(--text-color, #000); padding: 10px 16px; border-radius: 22px; outline: none; font-size: 14px;">
+                <button onclick="window.sendDirectMessage()" style="background: var(--accent, #00e5ff); color: #000; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+                    <i class="fas fa-paper-plane" style="font-size: 13px;"></i>
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="chat-p2-box" style="display: none; width: 100%; height: 100%; flex-direction: column; background: var(--bg-dark, #fff); position: absolute; top: 0; left: 0; z-index: 3;">
-        <div style="padding: 15px; border-bottom: 1px solid var(--border-color, #e0e0e0); display: flex; align-items: center; justify-content: space-between; background: var(--card-bg, #f5f5f5);">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="fas fa-arrow-left" onclick="closeChatWindow()" style="cursor: pointer; font-size: 16px; color: var(--accent, #00e5ff); padding-right: 5px;"></i>
-                <div id="active-chat-avatar" style="width: 38px; height: 38px; background: var(--accent, #00e5ff); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #000; font-size: 14px;">S</div>
-                <div>
-                    <h4 id="active-chat-name" style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-color, #000);">MD SHAKIB</h4>
-                    <p style="margin: 0; font-size: 11px; color: var(--accent, #00e5ff); font-weight: bold;">Active now</p>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 18px; color: var(--accent, #00e5ff); font-size: 18px; padding-right: 5px;">
-                <i class="fas fa-phone-alt" style="cursor: pointer;"></i>
-                <i class="fas fa-video" style="cursor: pointer;"></i>
-                <i class="fas fa-ellipsis-v" style="cursor: pointer; color: var(--text-color, #000);"></i>
-            </div>
-        </div>
-        <div id="chat-messages-container" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="align-self: center; background: rgba(0, 0, 0, 0.03); border: 1px solid var(--border-color, #e0e0e0); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: var(--text-color, #000); opacity: 0.5;">End-to-end encrypted</div>
-        </div>
-        <div style="padding: 12px 15px; border-top: 1px solid var(--border-color, #e0e0e0); background: var(--card-bg, #f5f5f5); display: flex; align-items: center; gap: 10px; padding-bottom: calc(12px + env(safe-area-inset-bottom));">
-            <input type="text" id="chat-message-input" onkeypress="if(event.key === 'Enter') window.sendDirectMessage()" placeholder="মেসেজ লিখুন..." style="flex: 1; background: var(--bg-dark, #fff); border: 1px solid var(--border-color, #e0e0e0); color: var(--text-color, #000); padding: 10px 16px; border-radius: 22px; outline: none; font-size: 14px;">
-            <button onclick="window.sendDirectMessage()" style="background: var(--accent, #00e5ff); color: #000; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
-                <i class="fas fa-paper-plane" style="font-size: 13px;"></i>
-            </button>
-        </div>
-    </div>
-</div>
+    <script>
+        window.openChatWindow = function(username, letter) {
+            const nameEl = document.getElementById('active-chat-name');
+            const avatarEl = document.getElementById('active-chat-avatar');
+            const p2Box = document.getElementById('chat-p2-box');
 
-<script>
-    window.openChatWindow = function(username, letter) {
-        const nameEl = document.getElementById('active-chat-name');
-        const avatarEl = document.getElementById('active-chat-avatar');
-        const p2Box = document.getElementById('chat-p2-box');
+            if(nameEl) nameEl.innerText = username;
+            if(avatarEl) avatarEl.innerText = letter ? letter.toUpperCase() : username.charAt(0).toUpperCase();
+            if(p2Box) p2Box.style.display = 'flex';
+        };
 
-        if(nameEl) nameEl.innerText = username;
-        if(avatarEl) avatarEl.innerText = letter ? letter.toUpperCase() : username.charAt(0).toUpperCase();
-        if(p2Box) p2Box.style.display = 'flex';
-    };
+        window.closeChatWindow = function() {
+            const p2Box = document.getElementById('chat-p2-box');
+            if(p2Box) p2Box.style.display = 'none';
+        };
 
-    window.closeChatWindow = function() {
-        const p2Box = document.getElementById('chat-p2-box');
-        if(p2Box) p2Box.style.display = 'none';
-    };
-
-    window.editProfileDetails = function() {
-        const modal = document.getElementById('edit-profile-modal');
-        const overlay = document.getElementById('edit-profile-overlay');
-        if(modal && overlay) {
-            modal.style.display = 'block';
-            overlay.style.display = 'block';
-        }
-    };
-</script> <script src="script.js"></script>
-  
+        window.editProfileDetails = function() {
+            const modal = document.getElementById('edit-profile-modal');
+            const overlay = document.getElementById('edit-profile-overlay');
+            if(modal && overlay) {
+                modal.style.display = 'block';
+                overlay.style.display = 'block';
+            }
+        };
+    </script> 
+    
+    <script src="script.js"></script>
 </body>
 </html>
